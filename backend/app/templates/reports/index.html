@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="mb-2">Reports</h1>
+            <p class="lead">Generate detailed reports from KPI data</p>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">Generate Reports</h5>
+        </div>
+        <div class="card-body">
+            <form id="reportForm" method="post">
+                <div class="mb-3">
+                    <label for="reportType" class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType" name="report_type" required>
+                        <option value="" selected disabled>Select a report type</option>
+                        {% for report in report_types %}
+                        <option value="{{ report.id }}">{{ report.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        <span id="reportDescription"></span>
+                    </div>
+                </div>
+
+                <div id="reportOptions" class="mt-4">
+                    <!-- Report options will be loaded dynamically here -->
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for report in report_types %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">{{ report.name }}</h5>
+                    <p class="card-text">{{ report.description }}</p>
+                    <button class="btn btn-primary select-report" data-report-type="{{ report.id }}">
+                        <i class="fas fa-file-alt me-1"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get report descriptions
+        const reportDescriptions = {
+            {% for report in report_types %}
+            '{{ report.id }}': '{{ report.description }}',
+            {% endfor %}
+        };
+        
+        // Update description when report type is selected
+        const reportTypeSelect = document.getElementById('reportType');
+        const reportDescription = document.getElementById('reportDescription');
+        const reportOptions = document.getElementById('reportOptions');
+        
+        reportTypeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            reportDescription.textContent = reportDescriptions[selectedType] || '';
+            
+            // Load the report options
+            if (selectedType) {
+                loadReportOptions(selectedType);
+            } else {
+                reportOptions.innerHTML = '';
+            }
+        });
+        
+        // Load report options via AJAX
+        function loadReportOptions(reportType) {
+            fetch(`/reports/report_options/${reportType}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    reportOptions.innerHTML = html;
+                    
+                    // Initialize date pickers
+                    const datePickers = reportOptions.querySelectorAll('input[type="date"]');
+                    datePickers.forEach(picker => {
+                        // Set default date range if not already set
+                        if (picker.id === 'start_date' && !picker.value) {
+                            const defaultStart = new Date();
+                            defaultStart.setFullYear(defaultStart.getFullYear() - 1);
+                            picker.valueAsDate = defaultStart;
+                        }
+                        if (picker.id === 'end_date' && !picker.value) {
+                            picker.valueAsDate = new Date();
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading report options:', error);
+                    reportOptions.innerHTML = `<div class="alert alert-danger">Error loading options: ${error.message}</div>`;
+                });
+        }
+        
+        // Handle report selection from cards
+        const selectReportButtons = document.querySelectorAll('.select-report');
+        selectReportButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const reportType = this.getAttribute('data-report-type');
+                reportTypeSelect.value = reportType;
+                reportTypeSelect.dispatchEvent(new Event('change'));
+                
+                // Scroll to the form
+                document.querySelector('.card.shadow-sm').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    });
+</script>
+{% endblock %}
