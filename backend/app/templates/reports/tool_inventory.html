@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        .report-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #777;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .proficiency-bar {
+            height: 20px;
+            background-color: #3498db;
+            display: inline-block;
+        }
+        .ownership-bar {
+            height: 20px;
+            background-color: #2ecc71;
+            display: inline-block;
+        }
+        .training-bar {
+            height: 20px;
+            background-color: #e74c3c;
+            display: inline-block;
+        }
+        .tier-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ title }}</h1>
+        <p class="subtitle">{{ description }}</p>
+    </div>
+
+    <div class="report-info">
+        <div>Generated on: {{ created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        <div>Report Period: {{ report_period.start_date.strftime('%Y-%m-%d') }} to {{ report_period.end_date.strftime('%Y-%m-%d') }}</div>
+        <div>
+            {% if report_filters.category_id %}
+            Category: {{ categories[0].name }}
+            {% else %}
+            All Categories
+            {% endif %}
+            {% if report_filters.tier %}
+            | Tier: {{ report_filters.tier }}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Tool Category Overview</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Can Operate %</th>
+                    <th>Owned %</th>
+                    <th>Truck Stock %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                {% set stats = category_stats.get(category.name, {}) %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ stats.get('can_operate_avg', 0) }}%;"></div>
+                        {{ "%.2f"|format(stats.get('can_operate_avg', 0)) }}%
+                    </td>
+                    <td>
+                        <div class="ownership-bar" style="width: {{ stats.get('owned_avg', 0) }}%;"></div>
+                        {{ "%.2f"|format(stats.get('owned_avg', 0)) }}%
+                    </td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ stats.get('truck_stock_avg', 0) }}%;"></div>
+                        {{ "%.2f"|format(stats.get('truck_stock_avg', 0)) }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Missing Tools (Low Ownership)</h2>
+        <p>Tools that employees can operate but don't own:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>Category</th>
+                    <th>Can Operate %</th>
+                    <th>Owned %</th>
+                    <th>Gap</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool in missing_tools %}
+                <tr>
+                    <td>{{ tool.tool_name }}</td>
+                    <td>{{ tool.category_name }}</td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ tool.can_operate_percent }}%;"></div>
+                        {{ "%.2f"|format(tool.can_operate_percent) }}%
+                    </td>
+                    <td>
+                        <div class="ownership-bar" style="width: {{ tool.owned_percent }}%;"></div>
+                        {{ "%.2f"|format(tool.owned_percent) }}%
+                    </td>
+                    <td>{{ "%.2f"|format(tool.gap) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="section">
+        <h2>Training Needs</h2>
+        <p>Tools with low proficiency requiring training:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>Category</th>
+                    <th>Can Operate %</th>
+                    <th>Gap to 100%</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool in training_needs %}
+                <tr>
+                    <td>{{ tool.tool_name }}</td>
+                    <td>{{ tool.category_name }}</td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ tool.can_operate_percent }}%;"></div>
+                        {{ "%.2f"|format(tool.can_operate_percent) }}%
+                    </td>
+                    <td>
+                        <div class="training-bar" style="width: {{ tool.gap }}%;"></div>
+                        {{ "%.2f"|format(tool.gap) }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Detailed Tool Analysis</h2>
+        {% for category in categories %}
+        <h3>{{ category.name }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool</th>
+                    <th>Can Operate</th>
+                    <th>Owned</th>
+                    <th>Truck Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool_id, stats in tool_stats.items() if stats.category_name == category.name %}
+                <tr>
+                    <td>{{ stats.tool_name }}</td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ stats.can_operate_percent }}%;"></div>
+                        {{ "%.2f"|format(stats.can_operate_percent) }}%
+                    </td>
+                    <td>
+                        <div class="ownership-bar" style="width: {{ stats.owned_percent }}%;"></div>
+                        {{ "%.2f"|format(stats.owned_percent) }}%
+                    </td>
+                    <td>
+                        <div class="proficiency-bar" style="width: {{ stats.truck_stock_percent }}%;"></div>
+                        {{ "%.2f"|format(stats.truck_stock_percent) }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+
+    <div class="footer">
+        <p>Handyman KPI System &copy; {{ created_at.year }}</p>
+        <p>Report ID: {{ report_type }}-{{ "all" if not report_filters.category_id else categories[0].name|lower }}-{{ created_at.strftime('%Y%m%d%H%M') }}</p>
+    </div>
+</body>
+</html>
