@@ -4,7 +4,7 @@ User Model
 Model for storing system users with authentication and Flask-Login integration.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import uuid
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -89,7 +89,7 @@ class User(db.Model, UserMixin):
     def generate_reset_token(self, expiration=3600):
         """Generate a reset token for password recovery."""
         self.reset_token = str(uuid.uuid4())
-        self.reset_token_expiry = datetime.utcnow() + timedelta(seconds=expiration)
+        self.reset_token_expiry = datetime.utcnow() + datetime.timedelta(seconds=expiration)
         db.session.commit()
         return self.reset_token
     
