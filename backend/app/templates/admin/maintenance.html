@@ -1,0 +1,267 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "Database Maintenance" %}
+{% set active_page = "maintenance" %}
+
+{% block admin_content %}
+<div class="row">
+    <!-- Database Statistics -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar mr-2"></i> Database Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Database Size:</span>
+                    <strong>{{ stats.size_formatted }}</strong>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Total Records:</span>
+                    <strong>{{ stats.total_records }}</strong>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mt-4">Table Information</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Table Name</th>
+                                <th>Records</th>
+                                <th>Columns</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table_name, table_info in stats.tables.items() %}
+                                <tr>
+                                    <td>{{ table_name }}</td>
+                                    <td>{{ table_info.records }}</td>
+                                    <td>{{ table_info.columns }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mt-4">Index Information</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Table</th>
+                                <th>Index Name</th>
+                                <th>Columns</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table_name, indexes in stats.indexes.items() %}
+                                {% for index in indexes %}
+                                    <tr>
+                                        <td>{{ table_name }}</td>
+                                        <td>{{ index.name }}</td>
+                                        <td>{{ index.columns|join(', ') }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Maintenance Actions -->
+    <div class="col-md-6 mb-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools mr-2"></i> Maintenance Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item list-group-item-action flex-column align-items-start">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Optimize Database</h5>
+                        </div>
+                        <p class="mb-1">Run VACUUM and ANALYZE commands to optimize the database structure and performance.</p>
+                        <small class="text-muted">This process may take a few minutes depending on database size.</small>
+                        <form method="post" action="{{ url_for('admin.optimize') }}" class="mt-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="fas fa-broom mr-1"></i> Optimize Now
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="list-group-item list-group-item-action flex-column align-items-start mt-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Clean Old Data</h5>
+                        </div>
+                        <p class="mb-1">Remove old evaluation records to free up space and improve performance.</p>
+                        <small class="text-muted">Records older than the specified date will be permanently deleted.</small>
+                        <form method="post" action="{{ url_for('admin.cleanup') }}" class="mt-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="form-group">
+                                <label for="days">Delete records older than:</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="days" name="days" 
+                                           min="30" value="365" required>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">days</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fas fa-trash-alt mr-1"></i> Clean Old Data
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div class="list-group-item list-group-item-action flex-column align-items-start mt-3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Check Database Integrity</h5>
+                        </div>
+                        <p class="mb-1">Verify database integrity and check for foreign key violations.</p>
+                        <small class="text-muted">Helps identify and resolve potential data consistency issues.</small>
+                        <form method="post" action="{{ url_for('admin.integrity_check') }}" class="mt-2">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-info btn-sm">
+                                <i class="fas fa-check-circle mr-1"></i> Check Integrity
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-export mr-2"></i> Export Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Export the database for backup or analysis purposes.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <form method="post" action="{{ url_for('admin.export') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="format" value="sql">
+                            <button type="submit" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-file-code mr-1"></i> Export as SQL
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="post" action="{{ url_for('admin.export') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="format" value="csv">
+                            <button type="submit" class="btn btn-outline-secondary btn-block">
+                                <i class="fas fa-file-csv mr-1"></i> Export as CSV
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6>Import Data</h6>
+                <form method="post" action="{{ url_for('admin.import_data') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="form-group">
+                        <label for="table_name">Target Table</label>
+                        <select class="form-control" id="table_name" name="table_name" required>
+                            <option value="">Select table...</option>
+                            {% for table_name in stats.tables %}
+                                <option value="{{ table_name }}">{{ table_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="csv_file">CSV File</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="csv_file" name="csv_file" accept=".csv" required>
+                            <label class="custom-file-label" for="csv_file">Choose file...</label>
+                        </div>
+                    </div>
+                    
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="truncate" name="truncate">
+                        <label class="custom-control-label" for="truncate">
+                            Clear existing data before import
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-outline-info btn-block">
+                        <i class="fas fa-file-import mr-1"></i> Import CSV
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integrity Check Results Modal -->
+<div class="modal fade" id="integrityModal" tabindex="-1" role="dialog" aria-labelledby="integrityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="integrityModalLabel">Database Integrity Check Results</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="integrityResults">
+                    <!-- Results will be inserted here via JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Handle file input display
+        $('.custom-file-input').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).next('.custom-file-label').html(fileName);
+        });
+        
+        // Show integrity check results modal if results are available
+        {% if integrity_check %}
+            $('#integrityResults').html(`
+                {% if integrity_check.success %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle mr-2"></i> {{ integrity_check.message }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> {{ integrity_check.message }}
+                    </div>
+                    <h6>Issues found:</h6>
+                    <ul>
+                        {% for issue in integrity_check.issues %}
+                            <li>{{ issue }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            `);
+            $('#integrityModal').modal('show');
+        {% endif %}
+    });
+</script>
+{% endblock %}
