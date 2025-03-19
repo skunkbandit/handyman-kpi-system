@@ -86,3 +86,86 @@ The system implements a comprehensive authentication system with the following f
   - Rate limiting for login attempts
   - Secure password reset mechanism
   - Force password change functionality
+
+## Testing
+
+The system includes a comprehensive testing framework with multiple layers of tests:
+
+### Unit Tests
+- Tests for individual models and components
+- Validation of business rules and constraints
+- Comprehensive validation of model relationships
+
+### Integration Tests
+- Tests for authentication routes and user management
+- Employee and evaluation management workflow testing
+- Dashboard and reporting functionality verification
+- Database migration testing
+
+### UI Tests
+- Selenium-based tests for frontend components
+- Responsive design verification
+- Form validation testing
+- Dynamic component interaction testing
+
+### Running Tests
+Tests can be run using the included test runner script:
+
+```
+python tests/run_tests.py
+```
+
+For detailed coverage reports:
+
+```
+python tests/run_tests.py --cov
+```
+
+## Installation
+
+### Prerequisites
+- Python 3.8+
+- pip
+- Virtual environment tool (optional but recommended)
+
+### Setup
+1. Clone the repository
+   ```
+   git clone https://github.com/skunkbandit/handyman-kpi-system.git
+   cd handyman-kpi-system
+   ```
+
+2. Create and activate a virtual environment (optional)
+   ```
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies
+   ```
+   pip install -r requirements.txt
+   ```
+
+4. Initialize the database
+   ```
+   python scripts/init_database.py
+   ```
+
+5. Run the application
+   ```
+   python backend/run.py
+   ```
+
+6. Open a web browser and navigate to `http://localhost:5000`
+
+## Usage
+
+Detailed usage instructions and admin documentation are available in the [User Guide](docs/user_guide.md).
+
+## License
+
+[MIT License](LICENSE)
+
+## Contact
+
+For support or questions, please open an issue on this repository.
