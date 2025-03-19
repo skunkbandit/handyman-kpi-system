@@ -20,6 +20,7 @@ The system allows for regular evaluations, progress tracking, skill gap analysis
 - **Tool Proficiency**: Track tools employees can operate and own
 - **Performance Dashboard**: Visual analytics of employee and team performance 
 - **Comprehensive Reports**: Generate PDF and Excel reports for performance reviews and analysis
+- **Authentication System**: Secure login with role-based permissions and user management
 
 ## Technical Stack
 
@@ -28,6 +29,7 @@ The system allows for regular evaluations, progress tracking, skill gap analysis
 - **Data Visualization**: Chart.js
 - **Database**: SQLite (development), MySQL/PostgreSQL (production)
 - **Reporting**: WeasyPrint (PDF generation), XlsxWriter (Excel export)
+- **Authentication**: Flask-Login, Flask-WTF for CSRF protection
 
 ## Project Structure
 
@@ -39,10 +41,13 @@ handyman-kpi-system/
 │   │   ├── routes/         # API endpoints and views
 │   │   ├── static/         # CSS, JS, images
 │   │   ├── templates/      # HTML templates
+│   │   ├── middleware/     # Application middleware (access control)
+│   │   ├── utils/          # Utility functions
 │   │   └── __init__.py     # Application initialization
 │   └── run.py              # Application entry point
 ├── database/
 │   ├── schema.sql          # Database schema
+│   ├── migrate_auth.py     # Authentication migration script
 │   └── init_data.sql       # Initial data
 ├── docs/                   # Documentation
 └── frontend/               # Front-end assets
@@ -58,6 +63,22 @@ The system provides four main report types:
 4. **Tool Inventory Report**: Tool proficiency and ownership tracking
 
 Reports can be exported as PDF documents or Excel spreadsheets for further analysis.
+
+## Authentication System
+
+The system implements a comprehensive authentication system with the following features:
+
+- **User Authentication**: Secure login/logout with session management
+- **Role-Based Access Control**: Three permission levels
+  - **Admin**: Full system access including user management
+  - **Manager**: Access to all employees and reporting
+  - **Employee**: Limited access to personal data and evaluations
+- **Security Features**:
+  - Password hashing with Werkzeug
+  - CSRF protection with Flask-WTF
+  - Rate limiting for login attempts
+  - Secure password reset mechanism
+  - Force password change functionality
 
 ## Installation
 
@@ -86,7 +107,7 @@ Reports can be exported as PDF documents or Excel spreadsheets for further analy
 
 4. Initialize the database
    ```
-   python setup_db.py
+   python scripts/init_database.py
    ```
 
 5. Run the application
