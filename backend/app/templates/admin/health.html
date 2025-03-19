@@ -1,0 +1,504 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "System Health Monitoring" %}
+{% set active_page = "health" %}
+
+{% block admin_content %}
+<div class="row">
+    <!-- System Overview -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-server mr-2"></i> System Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div style="font-size: 4rem;">
+                        {% if health_data.status == 'healthy' %}
+                            <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                            <i class="fas fa-exclamation-triangle text-danger"></i>
+                        {% endif %}
+                    </div>
+                    <h3 class="mt-2">
+                        {% if health_data.status == 'healthy' %}
+                            <span class="badge badge-success">System Healthy</span>
+                        {% else %}
+                            <span class="badge badge-danger">Issues Detected</span>
+                        {% endif %}
+                    </h3>
+                </div>
+                
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-clock mr-2"></i> Uptime:</span>
+                            <strong>{{ health_data.system.uptime }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-database mr-2"></i> Database Size:</span>
+                            <strong>{{ health_data.database.size_formatted }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-save mr-2"></i> Last Backup:</span>
+                            <strong>
+                                {% if health_data.database.last_backup %}
+                                    {{ health_data.database.last_backup }}
+                                {% else %}
+                                    <span class="text-danger">No backup found</span>
+                                {% endif %}
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-users mr-2"></i> Active Users:</span>
+                            <strong>{{ health_data.users.active }} of {{ health_data.users.total }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-chart-line mr-2"></i> Evaluations (last 30 days):</span>
+                            <strong>{{ health_data.evaluations.last_30_days }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="refreshHealth">
+                        <i class="fas fa-sync-alt mr-1"></i> Refresh Data
+                    </button>
+                    <small class="text-muted ml-2">Last updated: <span id="lastUpdated">{{ now.strftime('%H:%M:%S') }}</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Storage Usage -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-hdd mr-2"></i> Storage Usage
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <canvas id="storageChart" height="200"></canvas>
+                </div>
+                
+                <div class="table-responsive mt-4">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-database text-primary mr-2"></i> Total Storage:</td>
+                                <td class="text-right">{{ health_data.system.storage.total_formatted }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-hdd text-success mr-2"></i> Free Space:</td>
+                                <td class="text-right">{{ health_data.system.storage.free_formatted }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-hdd text-danger mr-2"></i> Used Space:</td>
+                                <td class="text-right">{{ health_data.system.storage.used_formatted }}</td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-percentage mr-2"></i> Usage Percentage:</td>
+                                <td class="text-right">
+                                    <span class="{% if health_data.system.storage.percent_used > 90 %}text-danger{% elif health_data.system.storage.percent_used > 70 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ health_data.system.storage.percent_used }}%
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Database Health -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database mr-2"></i> Database Health
+                </h5>
+            </div>
+            <div class="card-body">
+                <h5 class="border-bottom pb-2 mb-3">Table Statistics</h5>
+                <div style="height: 300px; overflow-y: auto;">
+                    <table class="table table-sm table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Table</th>
+                                <th class="text-right">Records</th>
+                                <th class="text-right">Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for table_name, record_count in health_data.database.tables.items() %}
+                                <tr>
+                                    <td>{{ table_name }}</td>
+                                    <td class="text-right">{{ record_count }}</td>
+                                    <td class="text-right">--</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('admin.maintenance') }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-tools mr-1"></i> Maintenance
+                            </a>
+                            <a href="{{ url_for('admin.optimize') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-broom mr-1"></i> Optimize
+                            </a>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-info" id="checkIntegrity">
+                            <i class="fas fa-check-circle mr-1"></i> Check Integrity
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Activity -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-clock mr-2"></i> User Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <h5 class="border-bottom pb-2 mb-3">Employee Distribution</h5>
+                <div class="text-center mb-4">
+                    <canvas id="employeeDistributionChart" height="200"></canvas>
+                </div>
+                
+                <h5 class="border-bottom pb-2 mb-3">Active Sessions</h5>
+                {% if active_sessions %}
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>IP Address</th>
+                                    <th>Started</th>
+                                    <th>Last Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in active_sessions %}
+                                    <tr>
+                                        <td>
+                                            {{ session.username }}
+                                            {% if session.is_admin %}
+                                                <span class="badge badge-primary">Admin</span>
+                                            {% elif session.is_manager %}
+                                                <span class="badge badge-info">Manager</span>
+                                            {% else %}
+                                                <span class="badge badge-secondary">Employee</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ session.ip_address }}</td>
+                                        <td>{{ session.started_at }}</td>
+                                        <td>{{ session.last_activity }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i> No active user sessions
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Performance -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-tachometer-alt mr-2"></i> System Performance
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="border-bottom pb-2 mb-3">Recent Performance</h5>
+                <div class="text-center">
+                    <canvas id="performanceChart" height="250"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h5 class="border-bottom pb-2 mb-3">Performance Metrics</h5>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-server mr-2"></i> Average Response Time:</span>
+                            <strong>{{ performance_metrics.avg_response_time }} ms</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-exchange-alt mr-2"></i> Requests (last hour):</span>
+                            <strong>{{ performance_metrics.requests_last_hour }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-exclamation-triangle mr-2"></i> Errors (last 24h):</span>
+                            <strong>{{ performance_metrics.errors_last_day }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-bolt mr-2"></i> Peak Load Time:</span>
+                            <strong>{{ performance_metrics.peak_load_time }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span><i class="fas fa-memory mr-2"></i> Memory Usage:</span>
+                            <strong>{{ performance_metrics.memory_usage }}%</strong>
+                        </div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar {% if performance_metrics.memory_usage > 90 %}bg-danger{% elif performance_metrics.memory_usage > 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ performance_metrics.memory_usage }}%" 
+                                 aria-valuenow="{{ performance_metrics.memory_usage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Integrity Check Results Modal -->
+<div class="modal fade" id="integrityModal" tabindex="-1" role="dialog" aria-labelledby="integrityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="integrityModalLabel">Database Integrity Check Results</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="integrityResults">
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // Storage Usage Chart
+        var storageCtx = document.getElementById('storageChart').getContext('2d');
+        var storageChart = new Chart(storageCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Used Space', 'Free Space'],
+                datasets: [{
+                    data: [
+                        {{ health_data.system.storage.percent_used }},
+                        {{ 100 - health_data.system.storage.percent_used }}
+                    ],
+                    backgroundColor: [
+                        {% if health_data.system.storage.percent_used > 90 %}
+                            '#dc3545', // danger
+                        {% elif health_data.system.storage.percent_used > 70 %}
+                            '#ffc107', // warning
+                        {% else %}
+                            '#28a745', // success
+                        {% endif %}
+                        '#e9ecef' // light gray
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Employee Distribution Chart
+        var employeeCtx = document.getElementById('employeeDistributionChart').getContext('2d');
+        var employeeChart = new Chart(employeeCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for tier, count in health_data.employees.by_tier.items() %}
+                        '{{ tier }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for tier, count in health_data.employees.by_tier.items() %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        '#4e73df', // blue
+                        '#1cc88a', // green
+                        '#36b9cc', // cyan
+                        '#f6c23e', // yellow
+                        '#e74a3b'  // red
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+        
+        // Performance Chart (sample data, should be replaced with real data)
+        var performanceCtx = document.getElementById('performanceChart').getContext('2d');
+        var performanceChart = new Chart(performanceCtx, {
+            type: 'line',
+            data: {
+                labels: ['7 days ago', '6 days ago', '5 days ago', '4 days ago', '3 days ago', '2 days ago', 'Yesterday', 'Today'],
+                datasets: [{
+                    label: 'Response Time (ms)',
+                    data: [120, 115, 130, 125, 140, 135, 145, 150],
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Response Time (ms)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Refresh health data
+        $('#refreshHealth').click(function() {
+            // In a real application, this would make an AJAX call to refresh data
+            // For demonstration, we'll just show a loading indicator and refresh the page
+            $(this).html('<i class="fas fa-circle-notch fa-spin mr-1"></i> Refreshing...');
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+        });
+        
+        // Check database integrity
+        $('#checkIntegrity').click(function() {
+            $('#integrityModal').modal('show');
+            
+            // Make an AJAX call to check database integrity
+            $.ajax({
+                url: "{{ url_for('admin.integrity_check_ajax') }}",
+                type: 'POST',
+                data: {
+                    csrf_token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#integrityResults').html(`
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle mr-2"></i> ${response.message}
+                            </div>
+                        `);
+                    } else {
+                        var issuesList = '';
+                        if (response.issues && response.issues.length > 0) {
+                            issuesList = '<h6>Issues found:</h6><ul>';
+                            response.issues.forEach(function(issue) {
+                                issuesList += `<li>${issue}</li>`;
+                            });
+                            issuesList += '</ul>';
+                        }
+                        
+                        $('#integrityResults').html(`
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle mr-2"></i> ${response.message}
+                            </div>
+                            ${issuesList}
+                        `);
+                    }
+                },
+                error: function() {
+                    $('#integrityResults').html(`
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle mr-2"></i> An error occurred while checking database integrity.
+                        </div>
+                    `);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
