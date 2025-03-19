@@ -1,63 +1,64 @@
 """
-Access control middleware for the KPI system.
-Provides decorators for role-based access control.
+Access control middleware for the KPI system
 """
 from functools import wraps
-from flask import flash, redirect, url_for
+from flask import current_app, flash, redirect, url_for
 from flask_login import current_user
 
 def admin_required(f):
     """
-    Decorator for routes that require admin privileges.
-    Redirects to login or shows access denied message.
+    Decorator to restrict access to admin users
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
+            flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
-        if not current_user.is_admin():
-            flash('Access denied. Admin privileges required.', 'danger')
+        
+        if not current_user.role == 'admin':
+            flash('You do not have permission to access this page.', 'danger')
             return redirect(url_for('dashboard.index'))
+        
         return f(*args, **kwargs)
     return decorated_function
 
 def manager_required(f):
     """
-    Decorator for routes that require manager privileges.
-    Managers and admins can access these routes.
+    Decorator to restrict access to manager users
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
+            flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
-        if not (current_user.is_admin() or current_user.is_manager()):
-            flash('Access denied. Manager privileges required.', 'danger')
+        
+        if not current_user.role in ['admin', 'manager']:
+            flash('You do not have permission to access this page.', 'danger')
             return redirect(url_for('dashboard.index'))
+        
         return f(*args, **kwargs)
     return decorated_function
 
 def employee_owner_required(f):
     """
-    Decorator for routes that require the user to be the owner of the employee resource.
-    Admins and managers can access all employee resources.
-    Regular users can only access resources for their linked employee.
+    Decorator to restrict access to the owner of the employee record or managers/admins
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
+            flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
         
-        # Admins and managers can access all resources
-        if current_user.is_admin() or current_user.is_manager():
+        # Check if user is admin or manager
+        if current_user.role in ['admin', 'manager']:
             return f(*args, **kwargs)
         
-        # Get employee_id from route parameters
+        # Employee can only access their own data
         employee_id = kwargs.get('employee_id')
+        if employee_id and current_user.employee_id == employee_id:
+            return f(*args, **kwargs)
         
-        # If no employee_id in parameters, or user is not linked to this employee
-        if not employee_id or not current_user.employee_id or current_user.employee_id != employee_id:
-            flash('Access denied. You can only access your own information.', 'danger')
-            return redirect(url_for('dashboard.index'))
-        
-        return f(*args, **kwargs)
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('dashboard.index'))
+    
     return decorated_function
