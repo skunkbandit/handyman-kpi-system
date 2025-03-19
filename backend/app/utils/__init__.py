@@ -1,5 +1,4 @@
 """
-Utils Package
------------
-Utility functions for the application.
+Utility functions package for the KPI system.
+Contains helper functions for various application components.
 """
