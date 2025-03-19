@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        .report-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        h2 {
+            color: #3498db;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #555;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #777;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .rating-bar {
+            height: 20px;
+            background-color: #3498db;
+            display: inline-block;
+        }
+        .tier-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ title }}</h1>
+        <p class="subtitle">{{ description }}</p>
+    </div>
+
+    <div class="report-info">
+        <div>Generated on: {{ created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+        <div>Report Period: {{ report_period.start_date.strftime('%Y-%m-%d') }} to {{ report_period.end_date.strftime('%Y-%m-%d') }}</div>
+    </div>
+
+    <div class="section">
+        <h2>Team Overview</h2>
+        <table>
+            <tr>
+                <th>Total Employees</th>
+                <td>{{ employees|length }}</td>
+            </tr>
+            {% if report_filters.tier %}
+            <tr>
+                <th>Tier Filter</th>
+                <td>{{ report_filters.tier }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>Tier Distribution</th>
+                <td>
+                    {% for tier, count in tier_distribution.items() %}
+                    {{ tier }}: {{ count }}{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Team Skill Performance</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Skill Category</th>
+                    <th>Team Average</th>
+                    <th>Proficiency Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category, average in team_averages.items() %}
+                <tr>
+                    <td>{{ category }}</td>
+                    <td>{{ "%.2f"|format(average) }}/5.00</td>
+                    <td>
+                        <div class="rating-bar" style="width: {{ (average / 5) * 100 }}%;"></div>
+                        {{ ((average / 5) * 100)|int }}%
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Top Performers by Category</h2>
+        {% for category, performers in top_performers.items() %}
+        <h3>{{ category }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Tier</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for performer in performers %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ performer.employee.first_name }} {{ performer.employee.last_name }}</td>
+                    <td>{{ performer.employee.tier }}</td>
+                    <td>{{ "%.2f"|format(performer.score) }}/5.00</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+
+    <div class="page-break"></div>
+
+    <div class="section">
+        <h2>Employee Comparison</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Tier</th>
+                    <th>Overall Average</th>
+                    {% for category in team_averages.keys() %}
+                    <th>{{ category }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employee_comparison %}
+                <tr>
+                    <td>{{ employee.name }}</td>
+                    <td>{{ employee.tier }}</td>
+                    <td>{{ "%.2f"|format(employee.overall_average) }}</td>
+                    {% for category in team_averages.keys() %}
+                    <td>{{ "%.2f"|format(employee.categories.get(category, 0)) }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Tool Proficiency Overview</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tool Name</th>
+                    <th>Category</th>
+                    <th>Proficiency %</th>
+                    <th>Ownership %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tool in tool_data %}
+                <tr>
+                    <td>{{ tool.tool }}</td>
+                    <td>{{ tool.category }}</td>
+                    <td>{{ "%.2f"|format(tool.proficiency_percent) }}%</td>
+                    <td>{{ "%.2f"|format(tool.ownership_percent) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Handyman KPI System &copy; {{ created_at.year }}</p>
+        <p>Report ID: {{ report_type }}-{{ "all" if not report_filters.tier else report_filters.tier }}-{{ created_at.strftime('%Y%m%d%H%M') }}</p>
+    </div>
+</body>
+</html>
