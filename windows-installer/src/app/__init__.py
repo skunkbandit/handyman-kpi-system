@@ -57,28 +57,23 @@ def create_app(test_config=None):
         from app.models.user import User
         return User.query.get(int(user_id))
     
-    # Register blueprints - comment out for now to avoid import errors
-    # from app.routes import dashboard, employees, evaluations, reports, main, auth
-    # 
-    # app.register_blueprint(main.bp)
+    # Register blueprints - starting with main and auth
+    from app.routes import main, auth
+    
+    app.register_blueprint(main.bp)
+    app.register_blueprint(auth.auth_bp)
+    
+    # Additional blueprints are commented out until we verify the first ones work
+    # from app.routes import dashboard, employees, evaluations, reports
     # app.register_blueprint(dashboard.bp)
     # app.register_blueprint(employees.bp)
     # app.register_blueprint(evaluations.bp)
     # app.register_blueprint(reports.bp)
-    # app.register_blueprint(auth.auth_bp)
-    
-    # Simplified route for testing
-    @app.route('/')
-    def index():
-        return 'Handyman KPI System is running!'
     
     # Add favicon route to prevent 404 errors
     @app.route('/favicon.ico')
     def favicon():
         return '', 204  # Return empty response with No Content status
-    
-    # Make url_for('index') work for the main index page
-    app.add_url_rule('/', endpoint='index')
     
     # Setup context processors
     @app.context_processor
@@ -87,19 +82,25 @@ def create_app(test_config=None):
             app_name=app.config['APP_NAME'],
             app_version=app.config['APP_VERSION']
         )
-
-    # Simplified error handlers that don't use templates
+    
+    # Add context processor for templates to get current year
+    @app.context_processor
+    def inject_now():
+        from datetime import datetime
+        return {'now': datetime.utcnow}
+    
+    # Restore template-based error handlers
     @app.errorhandler(404)
     def page_not_found(e):
-        return "404 Not Found - The requested page does not exist", 404
+        return render_template('errors/404.html'), 404
 
     @app.errorhandler(403)
     def forbidden(e):
-        return "403 Forbidden - You don't have permission to access this resource", 403
+        return render_template('errors/403.html'), 403
 
     @app.errorhandler(500)
     def server_error(e):
-        return "500 Server Error - An internal server error occurred", 500
+        return render_template('errors/500.html'), 500
     
     return app
 
