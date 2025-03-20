@@ -204,3 +204,180 @@ def forgot_password():
         return redirect(url_for('auth.login'))
     
     return render_template('auth/forgot_password.html')
+
+@bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Handle password reset with token."""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    
+    user = User.verify_reset_token(token)
+    if not user:
+        flash('Invalid or expired reset token', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if new_password != confirm_password:
+            flash('Passwords do not match', 'danger')
+        elif len(new_password) < 8:
+            flash('Password must be at least 8 characters long', 'danger')
+        else:
+            # Check password complexity
+            has_upper = any(c.isupper() for c in new_password)
+            has_lower = any(c.islower() for c in new_password)
+            has_digit = any(c.isdigit() for c in new_password)
+            
+            if not (has_upper and has_lower and has_digit):
+                flash('Password must contain at least one uppercase letter, one lowercase letter, and one number', 'danger')
+                return render_template('auth/reset_password.html', token=token)
+            
+            user.password = new_password
+            user.force_password_change = False
+            user.clear_reset_token()
+            db.session.commit()
+            flash('Your password has been reset. You can now login with your new password.', 'success')
+            return redirect(url_for('auth.login'))
+    
+    return render_template('auth/reset_password.html', token=token)
+
+# User management routes (admin only)
+@bp.route('/users')
+@login_required
+@admin_required
+def user_management():
+    """List all users for management (admin only)."""
+    users = User.query.all()
+    return render_template('auth/user_management.html', users=users)
+
+@bp.route('/users/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def create_user():
+    """Create a new user (admin only)."""
+    employees = Employee.query.all()
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+        employee_id = request.form.get('employee_id')
+        
+        # Check password complexity
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long', 'danger')
+            return render_template('auth/create_user.html', employees=employees)
+        
+        has_upper = any(c.isupper() for c in password)
+        has_lower = any(c.islower() for c in password)
+        has_digit = any(c.isdigit() for c in password)
+        
+        if not (has_upper and has_lower and has_digit):
+            flash('Password must contain at least one uppercase letter, one lowercase letter, and one number', 'danger')
+            return render_template('auth/create_user.html', employees=employees)
+        
+        # Check if username already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists', 'danger')
+            return render_template('auth/create_user.html', employees=employees)
+        
+        # Create new user
+        user = User(
+            username=username,
+            password=password,
+            role=role,
+            employee_id=int(employee_id) if employee_id else None,
+            active=True
+        )
+        
+        db.session.add(user)
+        db.session.commit()
+        flash(f'User {username} created successfully', 'success')
+        return redirect(url_for('auth.user_management'))
+    
+    return render_template('auth/create_user.html', employees=employees)
+
+@bp.route('/users/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_user(id):
+    """Edit a user (admin only)."""
+    user = User.query.get_or_404(id)
+    employees = Employee.query.all()
+    
+    if request.method == 'POST':
+        username = request.form.get('username')
+        role = request.form.get('role')
+        employee_id = request.form.get('employee_id')
+        active = request.form.get('active') == '1'
+        
+        # Check if username already exists and is not the current user
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user and existing_user.id != user.id:
+            flash('Username already exists', 'danger')
+            return render_template('auth/edit_user.html', user=user, employees=employees)
+        
+        user.username = username
+        user.role = role
+        user.employee_id = int(employee_id) if employee_id else None
+        user.active = active
+        
+        db.session.commit()
+        flash(f'User {username} updated successfully', 'success')
+        return redirect(url_for('auth.user_management'))
+    
+    return render_template('auth/edit_user.html', user=user, employees=employees)
+
+@bp.route('/users/delete/<int:id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(id):
+    """Delete a user (admin only)."""
+    user = User.query.get_or_404(id)
+    
+    # Prevent deleting your own account
+    if user.id == current_user.id:
+        flash('You cannot delete your own account', 'danger')
+        return redirect(url_for('auth.user_management'))
+    
+    username = user.username
+    db.session.delete(user)
+    db.session.commit()
+    flash(f'User {username} deleted successfully', 'success')
+    return redirect(url_for('auth.user_management'))
+
+@bp.route('/users/reset-password/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def reset_user_password(id):
+    """Reset a user's password (admin only)."""
+    user = User.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        force_change = request.form.get('force_change') == '1'
+        
+        if new_password != confirm_password:
+            flash('Passwords do not match', 'danger')
+        elif len(new_password) < 8:
+            flash('Password must be at least 8 characters long', 'danger')
+        else:
+            # Check password complexity
+            has_upper = any(c.isupper() for c in new_password)
+            has_lower = any(c.islower() for c in new_password)
+            has_digit = any(c.isdigit() for c in new_password)
+            
+            if not (has_upper and has_lower and has_digit):
+                flash('Password must contain at least one uppercase letter, one lowercase letter, and one number', 'danger')
+                return render_template('auth/reset_user_password.html', user=user)
+            
+            user.password = new_password
+            user.force_password_change = force_change
+            db.session.commit()
+            flash(f'Password for {user.username} has been reset', 'success')
+            return redirect(url_for('auth.user_management'))
+    
+    return render_template('auth/reset_user_password.html', user=user)
