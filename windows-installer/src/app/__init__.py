@@ -2,7 +2,7 @@
 Flask application factory for the KPI system
 """
 import os
-from flask import Flask, redirect, url_for, render_template
+from flask import Flask, redirect, url_for, render_template, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -72,6 +72,11 @@ def create_app(test_config=None):
     def index():
         return 'Handyman KPI System is running!'
     
+    # Add favicon route to prevent 404 errors
+    @app.route('/favicon.ico')
+    def favicon():
+        return '', 204  # Return empty response with No Content status
+    
     # Make url_for('index') work for the main index page
     app.add_url_rule('/', endpoint='index')
     
@@ -83,18 +88,18 @@ def create_app(test_config=None):
             app_version=app.config['APP_VERSION']
         )
 
-    # Error handlers
+    # Simplified error handlers that don't use templates
     @app.errorhandler(404)
     def page_not_found(e):
-        return render_template('errors/404.html'), 404
+        return "404 Not Found - The requested page does not exist", 404
 
     @app.errorhandler(403)
     def forbidden(e):
-        return render_template('errors/403.html'), 403
+        return "403 Forbidden - You don't have permission to access this resource", 403
 
     @app.errorhandler(500)
     def server_error(e):
-        return render_template('errors/500.html'), 500
+        return "500 Server Error - An internal server error occurred", 500
     
     return app
 
