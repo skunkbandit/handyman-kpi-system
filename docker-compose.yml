@@ -1,19 +1,82 @@
 version: '3.8'
 
 services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./instance:/app/instance
-    environment:
-      - FLASK_APP=backend.run
-      - FLASK_ENV=production
-      - DATABASE_URL=sqlite:///instance/kpi-system.db
+  kpi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: handyman-kpi-system:latest
     restart: unless-stopped
+    ports:
+      - "8080:5000"
+    volumes:
+      - kpi-data:/app/instance
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-default_not_secure_in_production}
+      - DATABASE_URI=sqlite:////app/instance/database/kpi.db
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+      - MAX_CONTENT_LENGTH=${MAX_CONTENT_LENGTH:-16777216}
+      - TIMEZONE=${TIMEZONE:-UTC}
+    depends_on:
+      - redis
     networks:
       - kpi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  redis:
+    image: redis:6-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - kpi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backup-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: handyman-kpi-system:latest
+    restart: unless-stopped
+    command: ["python", "-m", "scripts.backup_database", "--scheduled"]
+    volumes:
+      - kpi-data:/app/instance
+    environment:
+      - DATABASE_URI=sqlite:////app/instance/database/kpi.db
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+    depends_on:
+      - kpi-app
+    networks:
+      - kpi-network
+
+  nginx:
+    image: nginx:1.21-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./kpi-system/frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - kpi-app
+    networks:
+      - kpi-network
+
+volumes:
+  kpi-data:
+  redis-data:
 
 networks:
   kpi-network:
