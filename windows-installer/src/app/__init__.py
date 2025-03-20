@@ -57,18 +57,25 @@ def create_app(test_config=None):
         from app.models.user import User
         return User.query.get(int(user_id))
     
-    # Register blueprints - starting with main and auth
-    from app.routes import main, auth
+    # Register blueprints - Import directly to match the expected names
+    # in the routes/__init__.py file
+    from app.routes.main import bp as main_bp
+    from app.routes.auth import bp as auth_bp
     
-    app.register_blueprint(main.bp)
-    app.register_blueprint(auth.auth_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp)
     
     # Additional blueprints are commented out until we verify the first ones work
-    # from app.routes import dashboard, employees, evaluations, reports
-    # app.register_blueprint(dashboard.bp)
-    # app.register_blueprint(employees.bp)
-    # app.register_blueprint(evaluations.bp)
-    # app.register_blueprint(reports.bp)
+    # from app.routes.dashboard import bp as dashboard_bp
+    # from app.routes.employees import bp as employees_bp
+    # from app.routes.evaluations import bp as evaluations_bp
+    # from app.routes.reports import bp as reports_bp
+    # from app.routes.admin import admin as admin_bp
+    # app.register_blueprint(dashboard_bp)
+    # app.register_blueprint(employees_bp)
+    # app.register_blueprint(evaluations_bp)
+    # app.register_blueprint(reports_bp)
+    # app.register_blueprint(admin_bp)
     
     # Add favicon route to prevent 404 errors
     @app.route('/favicon.ico')
