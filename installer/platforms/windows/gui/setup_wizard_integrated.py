@@ -61,3 +61,29 @@ class SetupWizard:
             font=("Arial", 16, "bold")
         )
         header_label.pack(side=tk.LEFT)
+        
+        # Create notebook (tabbed interface)
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+        
+        # Create tabs
+        self.welcome_tab = ttk.Frame(self.notebook)
+        self.database_tab = ttk.Frame(self.notebook)
+        self.admin_tab = ttk.Frame(self.notebook)
+        self.finish_tab = ttk.Frame(self.notebook)
+        
+        self.notebook.add(self.welcome_tab, text="Welcome")
+        self.notebook.add(self.database_tab, text="Database")
+        self.notebook.add(self.admin_tab, text="Admin Account")
+        self.notebook.add(self.finish_tab, text="Finish")
+        
+        # Initialize tabs
+        self.init_welcome_tab()
+        self.init_database_tab()
+        self.init_admin_tab()
+        self.init_finish_tab()
+        
+        # Disable tabs (will be enabled as we progress)
+        self.notebook.tab(1, state="disabled")
+        self.notebook.tab(2, state="disabled")
+        self.notebook.tab(3, state="disabled")
