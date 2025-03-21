@@ -87,3 +87,54 @@ class SetupWizard:
         self.notebook.tab(1, state="disabled")
         self.notebook.tab(2, state="disabled")
         self.notebook.tab(3, state="disabled")
+        
+        # Dictionary to store user inputs
+        self.user_inputs = {
+            'database': {
+                'type': tk.StringVar(value='sqlite'),
+                'path': tk.StringVar(value=os.path.join(
+                    self.environment.get_app_directory(), 'data', 'database.db')),
+                'host': tk.StringVar(value='localhost'),
+                'port': tk.StringVar(value='3306'),
+                'name': tk.StringVar(value='handyman_kpi'),
+                'user': tk.StringVar(value='root'),
+                'password': tk.StringVar(value='')
+            },
+            'admin': {
+                'username': tk.StringVar(value='admin'),
+                'password': tk.StringVar(value=''),
+                'confirm_password': tk.StringVar(value=''),
+                'email': tk.StringVar(value='admin@example.com'),
+                'first_name': tk.StringVar(value=''),
+                'last_name': tk.StringVar(value='')
+            },
+            'app': {
+                'company_name': tk.StringVar(value='Handyman Service Company'),
+                'port': tk.StringVar(value='5000'),
+                'create_desktop_shortcut': tk.BooleanVar(value=True),
+                'create_start_menu_shortcut': tk.BooleanVar(value=True),
+                'auto_start': tk.BooleanVar(value=False)
+            }
+        }
+        
+        # Center window on screen
+        self.center_window()
+    
+    def create_styles(self):
+        """Create styles for the wizard."""
+        style = ttk.Style()
+        
+        # Create a style for headers
+        style.configure("Header.TLabel", font=("Arial", 12, "bold"))
+        
+        # Create a style for primary buttons
+        style.configure("Primary.TButton", font=("Arial", 10, "bold"))
+    
+    def center_window(self):
+        """Center the window on the screen."""
+        self.root.update_idletasks()
+        width = self.root.winfo_width()
+        height = self.root.winfo_height()
+        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.root.winfo_screenheight() // 2) - (height // 2)
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
