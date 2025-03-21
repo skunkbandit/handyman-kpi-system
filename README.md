@@ -21,6 +21,7 @@ The system allows for regular evaluations, progress tracking, skill gap analysis
 - **Performance Dashboard**: Visual analytics of employee and team performance 
 - **Comprehensive Reports**: Generate PDF and Excel reports for performance reviews and analysis
 - **Authentication System**: Secure login with role-based permissions and user management
+- **Multi-Database Support**: Works with SQLite, MySQL, and PostgreSQL
 
 ## Technical Stack
 
@@ -30,6 +31,7 @@ The system allows for regular evaluations, progress tracking, skill gap analysis
 - **Database**: SQLite (development), MySQL/PostgreSQL (production)
 - **Reporting**: WeasyPrint (PDF generation), XlsxWriter (Excel export)
 - **Authentication**: Flask-Login, Flask-WTF for CSRF protection
+- **Installation**: Modular installer with multi-database support
 - **Testing**: pytest, coverage, Selenium
 
 ## Project Structure
@@ -50,6 +52,15 @@ handyman-kpi-system/
 │   ├── schema.sql          # Database schema
 │   ├── migrate_auth.py     # Authentication migration script
 │   └── init_data.sql       # Initial data
+├── installer/
+│   ├── core/               # Core installer functionality
+│   ├── platforms/          # Platform-specific extensions
+│   │   ├── windows/        # Windows-specific components
+│   │   └── docker/         # Docker-specific components (future)
+│   ├── shared/             # Shared resources
+│   │   ├── database/       # Database adapters and schemas
+│   │   └── utils/          # Shared utilities
+│   └── build/              # Build scripts
 ├── docs/                   # Documentation
 ├── tests/                  # Test suite
 │   ├── unit/               # Unit tests for models
@@ -87,6 +98,24 @@ The system implements a comprehensive authentication system with the following f
   - Secure password reset mechanism
   - Force password change functionality
 
+## Installation System
+
+The system features a modular installer architecture with support for multiple installation methods:
+
+- **Windows Installer**: GUI-based setup wizard
+- **Docker Deployment**: Container-based installation (coming soon)
+- **Source Installation**: Manual installation from source code
+
+### Database Support
+
+The installer supports multiple database backends:
+
+- **SQLite**: Recommended for single-user deployments
+- **MySQL**: For multi-user deployments with moderate load
+- **PostgreSQL**: For high-performance production environments
+
+The modular adapter system allows each database type to use optimized schemas and configurations while maintaining a consistent API.
+
 ## Testing
 
 The system includes a comprehensive testing framework with multiple layers of tests:
@@ -95,6 +124,7 @@ The system includes a comprehensive testing framework with multiple layers of te
 - Tests for individual models and components
 - Validation of business rules and constraints
 - Comprehensive validation of model relationships
+- Database adapter and initializer testing
 
 ### Integration Tests
 - Tests for authentication routes and user management
