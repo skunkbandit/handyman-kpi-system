@@ -12,4 +12,9 @@ from tkinter import ttk, messagebox, filedialog
 from typing import Dict, Any, Optional, Callable
 
 # Add parent directories to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))  # noqa
+
+from installer.core.config import InstallerConfig
+from installer.core.environment import Environment
+from installer.platforms.windows.environment import WindowsEnvironment
+from installer.shared.database.initializer import DatabaseInitializer
