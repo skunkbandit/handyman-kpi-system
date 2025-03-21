@@ -13,3 +13,19 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Employee tiers
+CREATE TABLE IF NOT EXISTS employee_tiers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    rank INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert default employee tiers
+INSERT IGNORE INTO employee_tiers (name, description, rank) VALUES
+    ('Apprentice', 'Entry-level handyman in training', 1),
+    ('Handyman', 'Basic handyman with core skills', 2),
+    ('Craftsman', 'Skilled handyman with specialized expertise', 3),
+    ('Master Craftsman', 'Expert handyman with advanced skills', 4),
+    ('Lead Craftsman', 'Senior handyman who can lead teams', 5);
