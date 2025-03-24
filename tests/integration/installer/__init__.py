@@ -1,0 +1,1 @@
+"""\nIntegration tests for the installer components.\n\nThis package contains integration tests for the installer, including:\n- Database integration tests\n- Setup wizard integration tests\n- End-to-end installation tests\n"""\n
