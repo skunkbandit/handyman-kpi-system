@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Dashboard</h1>
+        <p class="lead">Performance metrics and statistics</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="reportActions" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-file-export me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="reportActions">
+                <li><a class="dropdown-item" href="{{ url_for('reports.export_pdf') }}"><i class="fas fa-file-pdf me-2"></i> Export as PDF</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.export_excel') }}"><i class="fas fa-file-excel me-2"></i> Export as Excel</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('reports.index') }}"><i class="fas fa-chart-bar me-2"></i> All Reports</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm dashboard-card bg-primary text-white h-100">
+            <div class="card-body text-center">
+                <div class="icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="card-title fw-bold">{{ stats.total_employees }}</h3>
+                <p class="card-text">Total Employees</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm dashboard-card bg-success text-white h-100">
+            <div class="card-body text-center">
+                <div class="icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3 class="card-title fw-bold">{{ stats.total_evaluations }}</h3>
+                <p class="card-text">Evaluations</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm dashboard-card bg-info text-white h-100">
+            <div class="card-body text-center">
+                <div class="icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h3 class="card-title fw-bold">{{ stats.avg_skill_rating|round(1) }}</h3>
+                <p class="card-text">Avg. Skill Rating</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm dashboard-card bg-warning text-dark h-100">
+            <div class="card-body text-center">
+                <div class="icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h3 class="card-title fw-bold">{{ stats.tools_percentage|round }}%</h3>
+                <p class="card-text">Tool Proficiency</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">Filter Dashboard</h5>
+    </div>
+    <div class="card-body">
+        <form id="filterForm" method="get" class="row row-cols-lg-auto g-3 align-items-center">
+            <div class="col-12">
+                <label class="visually-hidden" for="employee">Employee</label>
+                <select class="form-select" id="employee" name="employee_id">
+                    <option value="">All Employees</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.employee_id }}" {% if request.args.get('employee_id')|int == employee.employee_id %}selected{% endif %}>
+                        {{ employee.name }} ({{ employee.tier }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <label class="visually-hidden" for="category">Category</label>
+                <select class="form-select" id="category" name="category_id">
+                    <option value="">All Categories</option>
+                    {% for category in skill_categories %}
+                    <option value="{{ category.category_id }}" {% if request.args.get('category_id')|int == category.category_id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <label class="visually-hidden" for="tier">Tier</label>
+                <select class="form-select" id="tier" name="tier">
+                    <option value="">All Tiers</option>
+                    <option value="Apprentice" {% if request.args.get('tier') == 'Apprentice' %}selected{% endif %}>Apprentice</option>
+                    <option value="Handyman" {% if request.args.get('tier') == 'Handyman' %}selected{% endif %}>Handyman</option>
+                    <option value="Craftsman" {% if request.args.get('tier') == 'Craftsman' %}selected{% endif %}>Craftsman</option>
+                    <option value="Master Craftsman" {% if request.args.get('tier') == 'Master Craftsman' %}selected{% endif %}>Master Craftsman</option>
+                    <option value="Lead Craftsman" {% if request.args.get('tier') == 'Lead Craftsman' %}selected{% endif %}>Lead Craftsman</option>
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <label class="visually-hidden" for="date_range">Date Range</label>
+                <select class="form-select" id="date_range" name="date_range">
+                    <option value="all" {% if request.args.get('date_range') == 'all' or not request.args.get('date_range') %}selected{% endif %}>All Time</option>
+                    <option value="year" {% if request.args.get('date_range') == 'year' %}selected{% endif %}>Past Year</option>
+                    <option value="quarter" {% if request.args.get('date_range') == 'quarter' %}selected{% endif %}>Past Quarter</option>
+                    <option value="month" {% if request.args.get('date_range') == 'month' %}selected{% endif %}>Past Month</option>
+                </select>
+            </div>
+            
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter me-1"></i> Apply Filters
+                </button>
+                
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Skill Rating Distribution -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Skill Rating Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="skillDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Over Time -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Progress Over Time</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Top Skills -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Top Skills</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Skill</th>
+                                <th>Category</th>
+                                <th class="text-center">Avg. Rating</th>
+                                <th class="text-end">Proficiency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for skill in top_skills %}
+                            <tr>
+                                <td>{{ skill.name }}</td>
+                                <td>{{ skill.category.name }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= skill.avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="progress">
+                                        <div class="progress-bar skill-progress-{{ skill.avg_rating|round|int }}" 
+                                             role="progressbar"
+                                             style="width: {{ skill.avg_rating / 5 * 100 }}%"
+                                             aria-valuenow="{{ skill.avg_rating }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="5"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Improvement Areas -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Improvement Areas</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Skill</th>
+                                <th>Category</th>
+                                <th class="text-center">Avg. Rating</th>
+                                <th class="text-end">Proficiency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for skill in improvement_skills %}
+                            <tr>
+                                <td>{{ skill.name }}</td>
+                                <td>{{ skill.category.name }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= skill.avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="progress">
+                                        <div class="progress-bar skill-progress-{{ skill.avg_rating|round|int }}" 
+                                             role="progressbar"
+                                             style="width: {{ skill.avg_rating / 5 * 100 }}%"
+                                             aria-valuenow="{{ skill.avg_rating }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="5"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Evaluations -->
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Evaluations</h5>
+                <a href="{{ url_for('evaluations.index') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-list me-1"></i> View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_evaluations %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Tier</th>
+                                <th>Date</th>
+                                <th class="text-center">Skills</th>
+                                <th class="text-center">Tools</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in recent_evaluations %}
+                            <tr>
+                                <td>{{ eval.employee.name }}</td>
+                                <td>
+                                    <span class="tier-badge {{ 'tier-' + eval.employee.tier.lower().replace(' ', '-') }}">
+                                        {{ eval.employee.tier }}
+                                    </span>
+                                </td>
+                                <td>{{ eval.evaluation_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% set avg_rating = eval.skill_evaluations|map(attribute='rating')|sum / eval.skill_evaluations|length if eval.skill_evaluations else 0 %}
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {{ eval.tool_evaluations|length }} tools
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('evaluations.view', evaluation_id=eval.evaluation_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info m-3">
+                    No evaluations available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Data for skill distribution chart
+    const skillDistributionData = {
+        labels: [
+            {% for category in skill_categories %}
+                '{{ category.name }}',
+            {% endfor %}
+        ],
+        data: [
+            {% for category in skill_categories %}
+                {{ category_avg_ratings.get(category.category_id, 0)|round(1) }},
+            {% endfor %}
+        ]
+    };
+    
+    // Data for progress over time chart
+    const progressData = {
+        labels: [
+            {% for date in progress_dates %}
+                '{{ date.strftime("%b %Y") }}',
+            {% endfor %}
+        ],
+        datasets: [
+            {% for category in skill_categories %}
+            {
+                label: '{{ category.name }}',
+                data: [
+                    {% for date in progress_dates %}
+                        {{ category_progress.get((category.category_id, date.strftime("%Y-%m")), 0)|round(1) }},
+                    {% endfor %}
+                ],
+                borderColor: getRandomColor(),
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                fill: false,
+                tension: 0.4
+            },
+            {% endfor %}
+        ]
+    };
+    
+    // Function to get random colors for chart
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+</script>
+{% endblock %}

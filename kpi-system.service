@@ -1,0 +1,34 @@
+[Unit]
+Description=Handyman KPI System
+After=network.target
+
+[Service]
+User=kpi-user
+Group=kpi-user
+WorkingDirectory=/opt/kpi-system
+ExecStart=/opt/kpi-system/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 --timeout 120 wsgi:app
+Restart=on-failure
+RestartSec=5
+Environment="PATH=/opt/kpi-system/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PYTHONPATH=/opt/kpi-system"
+Environment="FLASK_ENV=production"
+Environment="FLASK_APP=backend.app"
+
+# Load environment variables from .env file
+EnvironmentFile=/opt/kpi-system/.env
+
+# Limit resource usage
+CPUWeight=90
+MemoryMax=1G
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+
+{% block title %}About - Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>About</h1>
+        <p class="lead">Information about the Handyman KPI System</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">System Overview</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    The Handyman KPI System is a comprehensive performance tracking and evaluation platform designed 
+                    specifically for handyman businesses with tiered skill progression.
+                </p>
+                
+                <p>
+                    This system allows managers to track employee skills, tool proficiency, and performance metrics 
+                    over time, providing valuable insights for training, advancement, and business planning.
+                </p>
+                
+                <h5 class="mt-4">Key Features</h5>
+                <ul>
+                    <li>Digital skill evaluation forms with predefined categories</li>
+                    <li>Tool proficiency tracking</li>
+                    <li>Employee tier progression management</li>
+                    <li>Performance dashboards with data visualization</li>
+                    <li>Historical performance tracking</li>
+                    <li>Reporting and export capabilities</li>
+                </ul>
+                
+                <h5 class="mt-4">Tier System</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tier</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="tier-badge tier-apprentice">Apprentice</span></td>
+                                <td>Entry-level employee learning basic skills</td>
+                            </tr>
+                            <tr>
+                                <td><span class="tier-badge tier-handyman">Handyman</span></td>
+                                <td>Competent in a range of basic skills</td>
+                            </tr>
+                            <tr>
+                                <td><span class="tier-badge tier-craftsman">Craftsman</span></td>
+                                <td>Proficient in multiple skill categories</td>
+                            </tr>
+                            <tr>
+                                <td><span class="tier-badge tier-master-craftsman">Master Craftsman</span></td>
+                                <td>Expert in several skill categories with advanced capabilities</td>
+                            </tr>
+                            <tr>
+                                <td><span class="tier-badge tier-lead-craftsman">Lead Craftsman</span></td>
+                                <td>Highest skill level with leadership responsibilities</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Application:</strong> {{ app_name }}
+                </div>
+                <div class="mb-3">
+                    <strong>Version:</strong> {{ app_version }}
+                </div>
+                <div class="mb-3">
+                    <strong>Developed by:</strong> Your Company
+                </div>
+                <div class="mb-3">
+                    <strong>Copyright:</strong> © {{ now.year }} Your Company
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Support</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    For support or questions about using the system, please contact your system administrator.
+                </p>
+                
+                <div class="d-grid gap-2">
+                    <a href="mailto:support@example.com" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope me-1"></i> Contact Support
+                    </a>
+                    <a href="#" class="btn btn-outline-secondary">
+                        <i class="fas fa-book me-1"></i> User Manual
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Rating System</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    The system uses a 1-5 rating scale for evaluating employee skills:
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Rating</th>
+                                <th>Description</th>
+                                <th>Visual Representation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center">1</td>
+                                <td>Never performed this skill</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center">2</td>
+                                <td>Performed once or twice</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center">3</td>
+                                <td>Need a bit more training</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center">4</td>
+                                <td>Can do it but not a pro</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="far fa-star"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="text-center">5</td>
+                                <td>I am a DAMN PRO</td>
+                                <td>
+                                    <div class="rating-stars">
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                        <i class="fas fa-star"></i>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <p class="mt-3">
+                    For tools, the system tracks two aspects:
+                </p>
+                
+                <ul>
+                    <li><strong>Can Operate:</strong> The employee knows how to use the tool properly and safely</li>
+                    <li><strong>Owns Tool:</strong> The employee owns this tool as part of their truck stock</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

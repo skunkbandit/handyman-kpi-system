@@ -1,0 +1,301 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "User Management" %}
+{% set active_page = "users" %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-users mr-2"></i> System Users
+        </h5>
+        <a href="{{ url_for('auth.create_user') }}" class="btn btn-sm btn-light">
+            <i class="fas fa-user-plus mr-1"></i> Add New User
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <div class="form-row">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Search</span>
+                        </div>
+                        <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Role</span>
+                        </div>
+                        <select class="form-control" id="userRole">
+                            <option value="all">All Roles</option>
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="employee">Employee</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Status</span>
+                        </div>
+                        <select class="form-control" id="userStatus">
+                            <option value="all">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-primary btn-block" id="resetFilters">
+                        <i class="fas fa-undo mr-1"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="usersTable">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Last Login</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                        <tr class="user-role-{{ user.role }} user-status-{{ 'active' if user.active else 'inactive' }}">
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.first_name }} {{ user.last_name }}</td>
+                            <td>
+                                <span class="badge badge-{{ user.role_class }}">{{ user.role_display }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ 'success' if user.active else 'danger' }}">
+                                    {{ 'Active' if user.active else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.last_login %}
+                                    {{ user.last_login.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Never</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('auth.edit_user', user_id=user.id) }}" class="btn btn-info" title="Edit user">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('auth.reset_user_password', user_id=user.id) }}" class="btn btn-warning" title="Reset password">
+                                        <i class="fas fa-key"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-{{ 'danger' if user.active else 'success' }}" 
+                                            data-toggle="modal" 
+                                            data-target="#userStatusModal" 
+                                            data-user-id="{{ user.id }}"
+                                            data-username="{{ user.username }}"
+                                            data-current-status="{{ 'active' if user.active else 'inactive' }}"
+                                            title="{{ 'Deactivate' if user.active else 'Activate' }} user">
+                                        <i class="fas fa-{{ 'times' if user.active else 'check' }}"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- User Activity Report -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-chart-line mr-2"></i> User Activity Report
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2 mb-3">User Roles Distribution</h6>
+                <div class="text-center">
+                    <canvas id="userRolesChart" height="250"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="border-bottom pb-2 mb-3">Activity Statistics</h6>
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span>Active Users:</span>
+                            <strong>{{ active_count }} of {{ users|length }} ({{ (active_count / users|length * 100)|round|int }}%)</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span>Users Logged In Today:</span>
+                            <strong>{{ today_login_count }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span>Users Logged In This Week:</span>
+                            <strong>{{ week_login_count }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span>Users Logged In This Month:</span>
+                            <strong>{{ month_login_count }}</strong>
+                        </div>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <span>Users Never Logged In:</span>
+                            <strong>{{ never_login_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Status Change Modal -->
+<div class="modal fade" id="userStatusModal" tabindex="-1" role="dialog" aria-labelledby="userStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userStatusModalLabel">Change User Status</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="statusChangeMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="{{ url_for('auth.toggle_user_status') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="user_id" id="statusUserId" value="">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn" id="confirmStatusBtn">Confirm</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // User search filter
+        $('#userSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $("#usersTable tbody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+        
+        // Role filter
+        $('#userRole').change(function() {
+            applyFilters();
+        });
+        
+        // Status filter
+        $('#userStatus').change(function() {
+            applyFilters();
+        });
+        
+        // Reset filters
+        $('#resetFilters').click(function() {
+            $('#userSearch').val('');
+            $('#userRole').val('all');
+            $('#userStatus').val('all');
+            $("#usersTable tbody tr").show();
+        });
+        
+        // Apply all filters
+        function applyFilters() {
+            var role = $('#userRole').val();
+            var status = $('#userStatus').val();
+            
+            $("#usersTable tbody tr").show();
+            
+            if (role !== 'all') {
+                $("#usersTable tbody tr:not(.user-role-" + role + ")").hide();
+            }
+            
+            if (status !== 'all') {
+                $("#usersTable tbody tr:not(.user-status-" + status + ")").hide();
+            }
+        }
+        
+        // Set up user status modal
+        $('#userStatusModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var userId = button.data('user-id');
+            var username = button.data('username');
+            var currentStatus = button.data('current-status');
+            
+            var modal = $(this);
+            modal.find('#statusUserId').val(userId);
+            
+            if (currentStatus === 'active') {
+                modal.find('.modal-header').addClass('bg-danger text-white').removeClass('bg-success');
+                modal.find('#statusChangeMessage').html('Are you sure you want to <strong>deactivate</strong> user <strong>' + username + '</strong>?');
+                modal.find('#confirmStatusBtn').addClass('btn-danger').removeClass('btn-success').text('Deactivate');
+            } else {
+                modal.find('.modal-header').addClass('bg-success text-white').removeClass('bg-danger');
+                modal.find('#statusChangeMessage').html('Are you sure you want to <strong>activate</strong> user <strong>' + username + '</strong>?');
+                modal.find('#confirmStatusBtn').addClass('btn-success').removeClass('btn-danger').text('Activate');
+            }
+        });
+        
+        // User roles chart
+        var rolesCtx = document.getElementById('userRolesChart').getContext('2d');
+        var rolesChart = new Chart(rolesCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Admin', 'Manager', 'Employee'],
+                datasets: [{
+                    data: [
+                        {{ admin_count }},
+                        {{ manager_count }},
+                        {{ employee_count }}
+                    ],
+                    backgroundColor: [
+                        '#4e73df', // blue - admin
+                        '#1cc88a', // green - manager
+                        '#36b9cc'  // cyan - employee
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

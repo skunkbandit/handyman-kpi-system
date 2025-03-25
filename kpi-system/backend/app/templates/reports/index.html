@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports - Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Reports</h1>
+        <p class="lead">Generate and export reports with KPI data</p>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    <!-- Employee Performance Report -->
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-user-chart fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Employee Performance</h5>
+                <p class="card-text">
+                    Generate detailed performance reports for individual employees or teams.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-file-pdf me-1"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Skills Analysis Report -->
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-bar fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Skills Analysis</h5>
+                <p class="card-text">
+                    Analyze skill distribution and proficiency across the organization.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-file-pdf me-1"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tool Inventory Report -->
+    <div class="col">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-tools fa-3x text-info mb-3"></i>
+                <h5 class="card-title">Tool Inventory</h5>
+                <p class="card-text">
+                    Track tool proficiency and ownership across employees.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="#" class="btn btn-outline-primary">
+                        <i class="fas fa-file-pdf me-1"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <i class="fas fa-info-circle me-2"></i> The reporting module is currently under development. Full functionality will be available in the next update.
+</div>
+{% endblock %}

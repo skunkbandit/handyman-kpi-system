@@ -1,0 +1,256 @@
+@echo off
+echo ================================================
+echo Handyman KPI System - EMERGENCY FIX
+echo ================================================
+echo.
+
+set INSTALLED_APP=C:\Users\dtest\AppData\Local\Programs\Handyman KPI System
+
+REM Step 1: Stopping any running instances
+echo Step 1: Stopping any running instances...
+taskkill /F /IM python.exe 2>nul
+
+REM Step 2: Create a completely new routes/__init__.py that does NOT import any modules
+echo.
+echo Step 2: Creating empty routes/__init__.py...
+set ROUTES_INIT=%INSTALLED_APP%\app\routes\__init__.py
+echo Creating backup...
+copy /Y "%ROUTES_INIT%" "%ROUTES_INIT%.backup"
+
+echo """Routes package for the KPI system""" > "%ROUTES_INIT%"
+echo. >> "%ROUTES_INIT%"
+echo # Empty init file to prevent automatic imports >> "%ROUTES_INIT%"
+echo. >> "%ROUTES_INIT%"
+
+REM Step 3: Create a simplified app/__init__.py with direct imports only
+echo.
+echo Step 3: Creating simplified app/__init__.py...
+set INIT_FILE=%INSTALLED_APP%\app\__init__.py
+echo Creating backup...
+copy /Y "%INIT_FILE%" "%INIT_FILE%.backup"
+
+echo import os > "%INIT_FILE%"
+echo from flask import Flask, redirect, url_for, render_template >> "%INIT_FILE%"
+echo from flask_sqlalchemy import SQLAlchemy >> "%INIT_FILE%"
+echo from flask_login import LoginManager >> "%INIT_FILE%"
+echo from flask_wtf.csrf import CSRFProtect >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo # Create extension instances >> "%INIT_FILE%"
+echo db = SQLAlchemy() >> "%INIT_FILE%"
+echo login_manager = LoginManager() >> "%INIT_FILE%"
+echo csrf = CSRFProtect() >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo def create_app(test_config=None): >> "%INIT_FILE%"
+echo     """Create and configure the Flask application""" >> "%INIT_FILE%"
+echo     # Create app instance >> "%INIT_FILE%"
+echo     app = Flask(__name__, instance_relative_config=True) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Default configuration >> "%INIT_FILE%"
+echo     app.config.from_mapping( >> "%INIT_FILE%"
+echo         SECRET_KEY=os.environ.get('SECRET_KEY', 'dev_key_not_for_production'), >> "%INIT_FILE%"
+echo         SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'database', 'kpi_system.db')}", >> "%INIT_FILE%"
+echo         SQLALCHEMY_TRACK_MODIFICATIONS=False, >> "%INIT_FILE%"
+echo         APP_NAME='Handyman KPI System', >> "%INIT_FILE%"
+echo         APP_VERSION='1.0.0', >> "%INIT_FILE%"
+echo         WTF_CSRF_ENABLED=True, >> "%INIT_FILE%"
+echo         REMEMBER_COOKIE_DURATION=86400,  # 1 day in seconds >> "%INIT_FILE%"
+echo         REMEMBER_COOKIE_SECURE=False,    # Set to True in production with HTTPS >> "%INIT_FILE%"
+echo         REMEMBER_COOKIE_HTTPONLY=True >> "%INIT_FILE%"
+echo     ) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Load test config if passed in >> "%INIT_FILE%"
+echo     if test_config is not None: >> "%INIT_FILE%"
+echo         app.config.from_mapping(test_config) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Ensure the instance folder exists >> "%INIT_FILE%"
+echo     try: >> "%INIT_FILE%"
+echo         os.makedirs(app.instance_path) >> "%INIT_FILE%"
+echo     except OSError: >> "%INIT_FILE%"
+echo         pass >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Initialize extensions with app >> "%INIT_FILE%"
+echo     db.init_app(app) >> "%INIT_FILE%"
+echo     csrf.init_app(app) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Configure Flask-Login >> "%INIT_FILE%"
+echo     login_manager.init_app(app) >> "%INIT_FILE%"
+echo     login_manager.login_view = 'auth.login' >> "%INIT_FILE%"
+echo     login_manager.login_message = 'Please log in to access this page.' >> "%INIT_FILE%"
+echo     login_manager.login_message_category = 'info' >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     @login_manager.user_loader >> "%INIT_FILE%"
+echo     def load_user(user_id): >> "%INIT_FILE%"
+echo         from app.models.user import User >> "%INIT_FILE%"
+echo         return User.query.get(int(user_id)) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Import and register main blueprint >> "%INIT_FILE%"
+echo     try: >> "%INIT_FILE%"
+echo         from app.routes.main import bp as main_bp >> "%INIT_FILE%"
+echo         app.register_blueprint(main_bp) >> "%INIT_FILE%"
+echo     except ImportError: >> "%INIT_FILE%"
+echo         # Create emergency routes if main blueprint can't be imported >> "%INIT_FILE%"
+echo         from flask import Blueprint >> "%INIT_FILE%"
+echo         main_bp = Blueprint('main', __name__) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo         @main_bp.route('/') >> "%INIT_FILE%"
+echo         def index(): >> "%INIT_FILE%"
+echo             return render_template('emergency.html') >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo         app.register_blueprint(main_bp) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Import and register auth blueprint >> "%INIT_FILE%"
+echo     try: >> "%INIT_FILE%"
+echo         from app.routes.auth import bp as auth_bp >> "%INIT_FILE%"
+echo         app.register_blueprint(auth_bp) >> "%INIT_FILE%"
+echo     except ImportError: >> "%INIT_FILE%"
+echo         # Create emergency auth routes if auth blueprint can't be imported >> "%INIT_FILE%"
+echo         from flask import Blueprint >> "%INIT_FILE%"
+echo         auth_bp = Blueprint('auth', __name__, url_prefix='/auth') >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo         @auth_bp.route('/login') >> "%INIT_FILE%"
+echo         def login(): >> "%INIT_FILE%"
+echo             return render_template('auth/login_emergency.html') >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo         app.register_blueprint(auth_bp) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Setup context processors >> "%INIT_FILE%"
+echo     @app.context_processor >> "%INIT_FILE%"
+echo     def inject_app_info(): >> "%INIT_FILE%"
+echo         return dict( >> "%INIT_FILE%"
+echo             app_name=app.config['APP_NAME'], >> "%INIT_FILE%"
+echo             app_version=app.config['APP_VERSION'] >> "%INIT_FILE%"
+echo         ) >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Add context processor for templates to get current year >> "%INIT_FILE%"
+echo     @app.context_processor >> "%INIT_FILE%"
+echo     def inject_now(): >> "%INIT_FILE%"
+echo         from datetime import datetime >> "%INIT_FILE%"
+echo         return {'now': datetime.utcnow} >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Error handlers >> "%INIT_FILE%"
+echo     @app.errorhandler(404) >> "%INIT_FILE%"
+echo     def page_not_found(e): >> "%INIT_FILE%"
+echo         return render_template('errors/404.html'), 404 >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     @app.errorhandler(403) >> "%INIT_FILE%"
+echo     def forbidden(e): >> "%INIT_FILE%"
+echo         return render_template('errors/403.html'), 403 >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     @app.errorhandler(500) >> "%INIT_FILE%"
+echo     def server_error(e): >> "%INIT_FILE%"
+echo         return render_template('errors/500.html'), 500 >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     # Emergency route that does not depend on any other code >> "%INIT_FILE%"
+echo     @app.route('/emergency') >> "%INIT_FILE%"
+echo     def emergency(): >> "%INIT_FILE%"
+echo         return render_template('emergency.html') >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo     return app >> "%INIT_FILE%"
+echo. >> "%INIT_FILE%"
+echo # Create the Flask app instance >> "%INIT_FILE%"
+echo app = create_app() >> "%INIT_FILE%"
+
+REM Step 4: Create emergency templates
+echo.
+echo Step 4: Creating emergency templates...
+set TEMPLATES_DIR=%INSTALLED_APP%\app\templates
+
+if not exist "%TEMPLATES_DIR%\emergency.html" (
+    echo ^<!DOCTYPE html^> > "%TEMPLATES_DIR%\emergency.html"
+    echo ^<html lang="en"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo ^<head^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<meta charset="UTF-8"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<meta name="viewport" content="width=device-width, initial-scale=1.0"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<title^>Emergency Mode - Handyman KPI System^</title^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo ^</head^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo ^<body^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<div class="container mt-5"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo         ^<div class="row"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo             ^<div class="col-md-8 offset-md-2"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                 ^<div class="card shadow-sm"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                     ^<div class="card-body text-center"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<h1 class="display-4 mb-4"^>System Maintenance Mode^</h1^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<p class="lead"^>The Handyman KPI System is currently running in emergency mode.^</p^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<hr class="my-4"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<p^>The system has encountered a dependency issue with WeasyPrint (PDF generation library).^</p^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<p^>To enable all features, please install the required GTK libraries or contact system administrator.^</p^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^<div class="mt-4"^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                             ^<a href="/auth/login" class="btn btn-primary"^>Go to Login^</a^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                         ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                     ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo                 ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo             ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo         ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^</div^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo     ^<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"^>^</script^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo ^</body^> >> "%TEMPLATES_DIR%\emergency.html"
+    echo ^</html^> >> "%TEMPLATES_DIR%\emergency.html"
+)
+
+if not exist "%TEMPLATES_DIR%\auth" mkdir "%TEMPLATES_DIR%\auth"
+
+if not exist "%TEMPLATES_DIR%\auth\login_emergency.html" (
+    echo ^<!DOCTYPE html^> > "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^<html lang="en"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^<head^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<meta charset="UTF-8"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<meta name="viewport" content="width=device-width, initial-scale=1.0"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<title^>Login - Emergency Mode^</title^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^</head^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^<body^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<div class="container mt-5"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo         ^<div class="row"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo             ^<div class="col-md-6 offset-md-3"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                 ^<div class="card shadow-sm"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                     ^<div class="card-body p-4"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^<h2 class="text-center mb-4"^>Login^</h2^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^<div class="alert alert-warning"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             System is in emergency mode. Regular login is currently unavailable. >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^<form method="post" action="{{ url_for('auth.login') }}"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^<div class="mb-3"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<label for="username" class="form-label"^>Username^</label^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<input type="text" class="form-control" id="username" name="username" required^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^<div class="mb-3"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<label for="password" class="form-label"^>Password^</label^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<input type="password" class="form-control" id="password" name="password" required^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^<div class="mb-3 form-check"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<input type="checkbox" class="form-check-input" id="remember" name="remember"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<label class="form-check-label" for="remember"^>Remember me^</label^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^<div class="d-grid"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                                 ^<button type="submit" class="btn btn-primary"^>Login^</button^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^</form^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^<div class="text-center mt-3"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                             ^<a href="#" class="text-decoration-none"^>Forgot password?^</a^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                         ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                     ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo                 ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo             ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo         ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<div class="text-center mt-3 text-muted"^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo         ^<p^>Copyright © {{ now().year }} Handyman KPI System^</p^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^</div^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo     ^<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"^>^</script^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^</body^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+    echo ^</html^> >> "%TEMPLATES_DIR%\auth\login_emergency.html"
+)
+
+echo.
+echo EMERGENCY FIX COMPLETED!
+echo.
+echo This fix creates a completely self-contained emergency version of the application
+echo that does not import any of the problematic modules.
+echo.
+echo Please try starting the application again. It should at least reach the emergency page.
+echo.
+echo Note: This is a temporary fix. For a complete solution, either install GTK libraries
+echo or refactor the application to not depend on WeasyPrint.
+
+pause

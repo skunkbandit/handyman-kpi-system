@@ -1,0 +1,13 @@
+[GENERAL]
+app_name = Handyman KPI System
+app_version = 1.0.0
+debug = False
+secret_key = ${RANDOM_SECRET_KEY}
+
+[SERVER]
+host = 127.0.0.1
+port = 8080
+
+[DATABASE]
+type = sqlite
+path = kpi_system.db

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - {{ title }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .admin-sidebar {
+        background-color: #f8f9fa;
+        min-height: calc(100vh - 56px);
+        border-right: 1px solid #dee2e6;
+        padding: 1.5rem 0;
+    }
+    
+    .admin-sidebar .nav-link {
+        color: #495057;
+        padding: 0.5rem 1rem;
+    }
+    
+    .admin-sidebar .nav-link.active {
+        font-weight: bold;
+        color: #007bff;
+        background-color: #e9ecef;
+    }
+    
+    .admin-sidebar .nav-link:hover {
+        background-color: #e9ecef;
+    }
+    
+    .admin-content {
+        padding: 1.5rem;
+    }
+    
+    .admin-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-stat {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .dashboard-stat .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    
+    .dashboard-stat .stat-label {
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 admin-sidebar">
+            <h5 class="mb-3">Administration</h5>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </a>
+                <a class="nav-link {% if active_page == 'settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}">
+                    <i class="fas fa-cog mr-2"></i> System Settings
+                </a>
+                <a class="nav-link {% if active_page == 'users' %}active{% endif %}" href="{{ url_for('admin.users') }}">
+                    <i class="fas fa-users mr-2"></i> User Management
+                </a>
+                <a class="nav-link {% if active_page == 'backups' %}active{% endif %}" href="{{ url_for('admin.backups') }}">
+                    <i class="fas fa-database mr-2"></i> Backups & Restore
+                </a>
+                <a class="nav-link {% if active_page == 'maintenance' %}active{% endif %}" href="{{ url_for('admin.maintenance') }}">
+                    <i class="fas fa-tools mr-2"></i> Database Maintenance
+                </a>
+                <a class="nav-link {% if active_page == 'health' %}active{% endif %}" href="{{ url_for('admin.health') }}">
+                    <i class="fas fa-heartbeat mr-2"></i> System Health
+                </a>
+                <a class="nav-link {% if active_page == 'logs' %}active{% endif %}" href="{{ url_for('admin.logs') }}">
+                    <i class="fas fa-file-alt mr-2"></i> System Logs
+                </a>
+            </nav>
+        </div>
+        
+        <!-- Main content -->
+        <main class="col-md-9 col-lg-10 admin-content">
+            <h2 class="mb-4">{{ title }}</h2>
+            
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Page-specific content -->
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Auto-dismiss alerts after 5 seconds
+        window.setTimeout(function() {
+            $(".alert").fadeTo(500, 0).slideUp(500, function(){
+                $(this).remove(); 
+            });
+        }, 5000);
+    });
+</script>
+{% endblock %}

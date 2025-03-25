@@ -1,0 +1,175 @@
+/* 
+ * Handyman KPI System - Custom Styling
+ */
+
+/* General Styling */
+body {
+    font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Header */
+header {
+    margin-bottom: 1rem;
+}
+
+.navbar-brand {
+    font-weight: 500;
+}
+
+/* Card Styling */
+.card {
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Dashboard Styling */
+.dashboard-card {
+    transition: transform 0.2s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+}
+
+.dashboard-card .card-body {
+    padding: 1.5rem;
+}
+
+.dashboard-card .icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #0d6efd;
+}
+
+/* Skill rating stars */
+.rating-stars .fas {
+    color: #ffc107;
+}
+
+.rating-stars .far {
+    color: #e2e2e2;
+}
+
+/* Progress bars */
+.progress {
+    height: 10px;
+    border-radius: 5px;
+}
+
+.skill-progress-1 { background-color: #dc3545; }
+.skill-progress-2 { background-color: #fd7e14; }
+.skill-progress-3 { background-color: #ffc107; }
+.skill-progress-4 { background-color: #6c757d; }
+.skill-progress-5 { background-color: #28a745; }
+
+.progress-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Tier badges */
+.tier-badge {
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    font-size: 0.75em;
+    text-transform: uppercase;
+}
+
+.tier-apprentice {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.tier-handyman {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+.tier-craftsman {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.tier-master-craftsman {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.tier-lead-craftsman {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+/* Form styling */
+.form-label {
+    font-weight: 500;
+}
+
+.form-control:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Table styling */
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Accordion styling */
+.accordion-button:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Tool category icons */
+.tool-icon {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+    color: #6c757d;
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Footer */
+footer {
+    margin-top: 2rem;
+    padding: 1rem 0;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}

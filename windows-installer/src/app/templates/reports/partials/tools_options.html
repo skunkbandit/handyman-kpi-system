@@ -1,0 +1,55 @@
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Tool Inventory Report</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="category_id" class="form-label">Filter by Tool Category</label>
+                <select class="form-select" id="category_id" name="category_id">
+                    <option value="">All Categories</option>
+                    {% for category in tool_categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label for="tier" class="form-label">Filter by Employee Tier</label>
+                <select class="form-select" id="tier" name="tier">
+                    <option value="">All Tiers</option>
+                    {% for tier in tiers %}
+                    <option value="{{ tier }}">{{ tier }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label d-block">Report Format</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="format" id="format_pdf" value="pdf" checked>
+                <label class="form-check-label" for="format_pdf">PDF</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="format" id="format_excel" value="excel">
+                <label class="form-check-label" for="format_excel">Excel</label>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary" formaction="{{ url_for('reports.generate_tools_report') }}">
+            <i class="fas fa-file-export me-1"></i> Generate Report
+        </button>
+    </div>
+</div>

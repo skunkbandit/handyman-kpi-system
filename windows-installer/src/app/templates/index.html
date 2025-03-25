@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome | Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 text-center mb-4">
+            <h1>Welcome to Handyman KPI System</h1>
+            <p class="lead">Hello, {{ user.username }}!</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="card-title mb-0">System Status</h4>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>User Role:</span>
+                            <span class="badge bg-primary">{{ user.role }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>System Version:</span>
+                            <span class="badge bg-secondary">{{ app_version }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>Blueprints Status:</span>
+                            <span class="badge bg-success">2 of 6 enabled</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-footer bg-light">
+                    <p class="mb-0">
+                        Dashboard and other features will be available soon.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

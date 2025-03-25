@@ -1,0 +1,209 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "System Logs" %}
+{% set active_page = "logs" %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-file-alt mr-2"></i> System Logs
+        </h5>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('admin.logs', type='application') }}" class="btn btn-sm btn-{{ 'light' if log_type == 'application' else 'outline-light' }}">
+                Application
+            </a>
+            <a href="{{ url_for('admin.logs', type='access') }}" class="btn btn-sm btn-{{ 'light' if log_type == 'access' else 'outline-light' }}">
+                Access
+            </a>
+            <a href="{{ url_for('admin.logs', type='error') }}" class="btn btn-sm btn-{{ 'light' if log_type == 'error' else 'outline-light' }}">
+                Error
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <div class="form-row">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Filter</span>
+                        </div>
+                        <input type="text" class="form-control" id="logFilter" placeholder="Type to filter logs...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">Level</span>
+                        </div>
+                        <select class="form-control" id="logLevel">
+                            <option value="all">All Levels</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                            <option value="critical">Critical</option>
+                            <option value="debug">Debug</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="btn-group float-right" role="group">
+                        <button class="btn btn-outline-primary" id="refreshLogs">
+                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                        </button>
+                        <button class="btn btn-outline-secondary" id="downloadLogs">
+                            <i class="fas fa-download mr-1"></i> Download
+                        </button>
+                        <button class="btn btn-outline-danger" id="clearLogs" data-toggle="modal" data-target="#clearLogsModal">
+                            <i class="fas fa-trash-alt mr-1"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-2 text-muted small">
+            Showing {{ logs.logs|length }} of {{ logs.total }} logs
+            {% if logs.logs|length < logs.total %}
+                (page {{ logs.current_page }} of {{ logs.pages }})
+            {% endif %}
+        </div>
+        
+        <div class="logs-container">
+            {% if logs.logs %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover" id="logsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th style="width: 160px;">Timestamp</th>
+                                <th style="width: 100px;">Level</th>
+                                <th style="width: 120px;">Source</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs.logs %}
+                                {% set log_parts = parse_log_line(log) %}
+                                <tr class="log-level-{{ log_parts.level|lower }}">
+                                    <td>{{ log_parts.timestamp }}</td>
+                                    <td>
+                                        <span class="badge badge-{{ log_parts.level_class }}">
+                                            {{ log_parts.level }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log_parts.source }}</td>
+                                    <td>{{ log_parts.message }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if logs.pages > 1 %}
+                    <nav aria-label="Log pagination">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {{ 'disabled' if logs.current_page == 1 else '' }}">
+                                <a class="page-link" href="{{ url_for('admin.logs', type=log_type, page=logs.current_page-1) if logs.current_page > 1 else '#' }}">
+                                    Previous
+                                </a>
+                            </li>
+                            
+                            {% set start_page = [logs.current_page - 2, 1]|max %}
+                            {% set end_page = [start_page + 4, logs.pages]|min %}
+                            {% set start_page = [end_page - 4, 1]|max %}
+                            
+                            {% for p in range(start_page, end_page + 1) %}
+                                <li class="page-item {{ 'active' if p == logs.current_page else '' }}">
+                                    <a class="page-link" href="{{ url_for('admin.logs', type=log_type, page=p) }}">
+                                        {{ p }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                            
+                            <li class="page-item {{ 'disabled' if logs.current_page == logs.pages else '' }}">
+                                <a class="page-link" href="{{ url_for('admin.logs', type=log_type, page=logs.current_page+1) if logs.current_page < logs.pages else '#' }}">
+                                    Next
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i> No logs found.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Clear Logs Confirmation Modal -->
+<div class="modal fade" id="clearLogsModal" tabindex="-1" role="dialog" aria-labelledby="clearLogsModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="clearLogsModalLabel">Confirm Clear Logs</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to clear all {{ log_type }} logs?</p>
+                <p class="text-danger">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="{{ url_for('admin.clear_logs') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="log_type" value="{{ log_type }}">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt mr-1"></i> Clear Logs
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Filter logs by text
+        $('#logFilter').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            $("#logsTable tbody tr").filter(function() {
+                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+            });
+        });
+        
+        // Filter logs by level
+        $('#logLevel').change(function() {
+            var level = $(this).val();
+            if (level === 'all') {
+                $("#logsTable tbody tr").show();
+            } else {
+                $("#logsTable tbody tr").hide();
+                $("#logsTable tbody tr.log-level-" + level).show();
+            }
+        });
+        
+        // Refresh logs
+        $('#refreshLogs').click(function() {
+            location.reload();
+        });
+        
+        // Download logs
+        $('#downloadLogs').click(function() {
+            window.location.href = "{{ url_for('admin.download_logs', type=log_type) }}";
+        });
+        
+        // Auto-refresh on interval (optional, can be commented out)
+        // var autoRefresh = setInterval(function() {
+        //     $('#refreshLogs').click();
+        // }, 60000); // Refresh every 60 seconds
+    });
+</script>
+{% endblock %}

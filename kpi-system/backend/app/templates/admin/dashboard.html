@@ -1,0 +1,340 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "Admin Dashboard" %}
+{% set active_page = "dashboard" %}
+
+{% block admin_content %}
+<div class="row">
+    <!-- System Status -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-server mr-2"></i> System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <h3 class="text-center mb-3">
+                    {% if health_data.status == 'healthy' %}
+                        <span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Healthy</span>
+                    {% else %}
+                        <span class="badge badge-danger"><i class="fas fa-exclamation-triangle mr-1"></i> Issues Detected</span>
+                    {% endif %}
+                </h3>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Uptime:</span>
+                        <strong>{{ health_data.system.uptime }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Database Size:</span>
+                        <strong>{{ health_data.database.size_formatted }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light d-flex justify-content-between">
+                <a href="{{ url_for('admin.health') }}" class="btn btn-sm btn-outline-primary">View Details</a>
+                <span class="text-muted small align-self-center">Last checked: {{ now.strftime('%H:%M:%S') }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Stats -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users mr-2"></i> User Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h3>{{ health_data.users.total }}</h3>
+                        <div class="text-muted">Total Users</div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h3>{{ health_data.users.active }}</h3>
+                        <div class="text-muted">Active Users</div>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ health_data.users.admins }}</h4>
+                        <div class="text-muted small">Admins</div>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ health_data.users.managers }}</h4>
+                        <div class="text-muted small">Managers</div>
+                    </div>
+                    <div class="col-4">
+                        <h4>{{ health_data.users.employees }}</h4>
+                        <div class="text-muted small">Employees</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-sm btn-outline-success">Manage Users</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Stats -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database mr-2"></i> Database Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Total Records:</span>
+                        <strong>{{ stats.total_records }}</strong>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="border-bottom pb-2">Tables</h6>
+                    {% for table_name, table_info in stats.tables.items() %}
+                        <div class="d-flex justify-content-between small">
+                            <span>{{ table_name }}:</span>
+                            <strong>{{ table_info.records }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <a href="{{ url_for('admin.maintenance') }}" class="btn btn-sm btn-outline-info">Database Tools</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-hdd mr-2"></i> Storage
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h4>{{ health_data.system.storage.percent_used }}%</h4>
+                    <div class="progress">
+                        <div 
+                            class="progress-bar {% if health_data.system.storage.percent_used > 90 %}bg-danger{% elif health_data.system.storage.percent_used > 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ health_data.system.storage.percent_used }}%" 
+                            aria-valuenow="{{ health_data.system.storage.percent_used }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                        </div>
+                    </div>
+                    <small class="text-muted">Storage Usage</small>
+                </div>
+
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                        <span>Total:</span>
+                        <strong>{{ health_data.system.storage.total_formatted }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                        <span>Used:</span>
+                        <strong>{{ health_data.system.storage.used_formatted }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small">
+                        <span>Free:</span>
+                        <strong>{{ health_data.system.storage.free_formatted }}</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <a href="{{ url_for('admin.backups') }}" class="btn btn-sm btn-outline-warning">Manage Backups</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Activity -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history mr-2"></i> Recent Activity
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% if recent_logs %}
+                        {% for log in recent_logs[:5] %}
+                            <div class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ log.message }}</h6>
+                                    <small class="text-muted">{{ log.timestamp }}</small>
+                                </div>
+                                <small class="text-muted">
+                                    <span class="badge badge-{{ log.level_class }}">{{ log.level }}</span>
+                                    {{ log.user if log.user else 'System' }}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-center text-muted py-5">
+                            <i class="fas fa-info-circle mb-2"></i><br>
+                            No recent activity to display
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <a href="{{ url_for('admin.logs') }}" class="btn btn-sm btn-outline-secondary">View All Logs</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Stats -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-hard-hat mr-2"></i> Employee Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <h5 class="border-bottom pb-2">Employee Tiers</h5>
+                        <div class="chart-container" style="position: relative; height:200px;">
+                            <canvas id="employeeTiersChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <h5 class="border-bottom pb-2">Latest Evaluations</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Employee</th>
+                                    <th>Date</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if recent_evaluations %}
+                                    {% for eval in recent_evaluations[:3] %}
+                                        <tr>
+                                            <td>{{ eval.employee_name }}</td>
+                                            <td>{{ eval.date }}</td>
+                                            <td>
+                                                <div class="progress" style="height: 10px;">
+                                                    <div class="progress-bar bg-{{ eval.score_class }}" 
+                                                         role="progressbar" 
+                                                         style="width: {{ eval.score_percent }}%" 
+                                                         aria-valuenow="{{ eval.score }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="5">
+                                                    </div>
+                                                </div>
+                                                <small>{{ eval.score }} / 5</small>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted">No recent evaluations</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <a href="{{ url_for('evaluations.index') }}" class="btn btn-sm btn-outline-dark">View All Evaluations</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-bolt mr-2"></i> Quick Actions
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('admin.create_backup') }}" class="btn btn-outline-primary btn-block">
+                    <i class="fas fa-save mb-2"></i><br>
+                    Create Backup
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('admin.optimize') }}" class="btn btn-outline-success btn-block">
+                    <i class="fas fa-broom mb-2"></i><br>
+                    Optimize Database
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('auth.create_user') }}" class="btn btn-outline-info btn-block">
+                    <i class="fas fa-user-plus mb-2"></i><br>
+                    Add New User
+                </a>
+            </div>
+            <div class="col-md-3 mb-3">
+                <a href="{{ url_for('admin.check_updates') }}" class="btn btn-outline-warning btn-block">
+                    <i class="fas fa-sync mb-2"></i><br>
+                    Check for Updates
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function() {
+        // Employee tiers chart
+        var tierCtx = document.getElementById('employeeTiersChart').getContext('2d');
+        var tierChart = new Chart(tierCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    {% for tier, count in health_data.employees.by_tier.items() %}
+                        '{{ tier }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for tier, count in health_data.employees.by_tier.items() %}
+                            {{ count }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        '#4e73df',
+                        '#1cc88a',
+                        '#36b9cc',
+                        '#f6c23e',
+                        '#e74a3b'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

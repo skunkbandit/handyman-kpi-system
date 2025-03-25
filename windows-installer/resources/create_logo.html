@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Logo File</title>
+    <script>
+        function createLogoAndDownload() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#336699';
+            ctx.fillRect(0, 0, 256, 256);
+            
+            // Border
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(10, 10, 236, 236);
+            
+            // Draw "KPI" text
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 72px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('KPI', 128, 110);
+            
+            // Draw "SYSTEM" text
+            ctx.font = 'bold 32px Arial';
+            ctx.fillText('SYSTEM', 128, 160);
+            
+            // Draw some KPI-like graphic elements
+            // Bar chart
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(60, 190, 20, 40);
+            ctx.fillRect(100, 170, 20, 60);
+            ctx.fillRect(140, 150, 20, 80);
+            ctx.fillRect(180, 210, 20, 20);
+            
+            // Create a download link
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'logo.png';
+            document.body.appendChild(link);
+            
+            // Display the logo
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            document.body.appendChild(img);
+            
+            document.getElementById('status').textContent = 'Logo created! Right-click on the image and select "Save image as..." to save it as logo.png';
+        }
+    </script>
+</head>
+<body onload="createLogoAndDownload()">
+    <h1>KPI System Logo Generator</h1>
+    <p id="status">Generating logo...</p>
+    <p>Save the image below as "logo.png" in the resources folder.</p>
+</body>
+</html>

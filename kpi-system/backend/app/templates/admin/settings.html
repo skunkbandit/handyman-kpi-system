@@ -1,0 +1,151 @@
+{% extends "admin/admin_base.html" %}
+
+{% set title = "System Settings" %}
+{% set active_page = "settings" %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-cog mr-2"></i> System Settings Configuration
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{{ url_for('admin.settings') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="form-row">
+                <div class="col-md-6 mb-4">
+                    <h5 class="border-bottom pb-2">General Settings</h5>
+                    
+                    <div class="form-group">
+                        <label for="company_name">Company Name</label>
+                        <input type="text" class="form-control" id="company_name" name="company_name" 
+                               value="{{ settings.company_name }}" required>
+                        <small class="form-text text-muted">The name displayed in the application header and reports</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ui_theme">Default UI Theme</label>
+                        <select class="form-control" id="ui_theme" name="ui_theme">
+                            <option value="light" {% if settings.ui_theme == 'light' %}selected{% endif %}>Light</option>
+                            <option value="dark" {% if settings.ui_theme == 'dark' %}selected{% endif %}>Dark</option>
+                            <option value="blue" {% if settings.ui_theme == 'blue' %}selected{% endif %}>Blue</option>
+                            <option value="green" {% if settings.ui_theme == 'green' %}selected{% endif %}>Green</option>
+                        </select>
+                        <small class="form-text text-muted">Default theme for new users (users can change their own theme)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="email_notifications" name="email_notifications"
+                                  {% if settings.email_notifications %}checked{% endif %}>
+                            <label class="custom-control-label" for="email_notifications">Enable Email Notifications</label>
+                        </div>
+                        <small class="form-text text-muted">Send email notifications for important system events</small>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <h5 class="border-bottom pb-2">Security Settings</h5>
+                    
+                    <div class="form-group">
+                        <label for="session_timeout">Session Timeout (minutes)</label>
+                        <input type="number" class="form-control" id="session_timeout" name="session_timeout"
+                               min="5" max="1440" value="{{ settings.session_timeout }}" required>
+                        <small class="form-text text-muted">Time before an inactive user is automatically logged out</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Password Policy</label>
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="form-group mb-2">
+                                    <label for="min_length" class="mb-1">Minimum Password Length</label>
+                                    <input type="number" class="form-control form-control-sm" id="min_length" name="min_length"
+                                           min="4" max="32" value="{{ settings.password_policy.min_length }}" required>
+                                </div>
+                                
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="checkbox" class="custom-control-input" id="require_uppercase" name="require_uppercase"
+                                          {% if settings.password_policy.require_uppercase %}checked{% endif %}>
+                                    <label class="custom-control-label" for="require_uppercase">Require Uppercase Letters</label>
+                                </div>
+                                
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="checkbox" class="custom-control-input" id="require_lowercase" name="require_lowercase"
+                                          {% if settings.password_policy.require_lowercase %}checked{% endif %}>
+                                    <label class="custom-control-label" for="require_lowercase">Require Lowercase Letters</label>
+                                </div>
+                                
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="checkbox" class="custom-control-input" id="require_numbers" name="require_numbers"
+                                          {% if settings.password_policy.require_numbers %}checked{% endif %}>
+                                    <label class="custom-control-label" for="require_numbers">Require Numbers</label>
+                                </div>
+                                
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="require_special" name="require_special"
+                                          {% if settings.password_policy.require_special %}checked{% endif %}>
+                                    <label class="custom-control-label" for="require_special">Require Special Characters</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="col-md-12 mb-4">
+                    <h5 class="border-bottom pb-2">Data Management</h5>
+                    
+                    <div class="form-group">
+                        <label for="auto_backup_frequency">Automatic Backup Frequency</label>
+                        <select class="form-control" id="auto_backup_frequency" name="auto_backup_frequency">
+                            <option value="daily" {% if settings.get('auto_backup_frequency') == 'daily' %}selected{% endif %}>Daily</option>
+                            <option value="weekly" {% if settings.get('auto_backup_frequency') == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if settings.get('auto_backup_frequency') == 'monthly' %}selected{% endif %}>Monthly</option>
+                            <option value="never" {% if settings.get('auto_backup_frequency') == 'never' %}selected{% endif %}>Never</option>
+                        </select>
+                        <small class="form-text text-muted">How often automatic backups should be performed</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max_backup_count">Maximum Number of Backups to Keep</label>
+                        <input type="number" class="form-control" id="max_backup_count" name="max_backup_count"
+                               min="1" max="100" value="{{ settings.get('max_backup_count', 10) }}" required>
+                        <small class="form-text text-muted">Oldest backups will be deleted when this limit is reached</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Save Settings
+                    </button>
+                    <button type="reset" class="btn btn-secondary ml-2">
+                        <i class="fas fa-undo mr-1"></i> Reset
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // Show/hide email settings based on checkbox
+        $("#email_notifications").change(function() {
+            if($(this).is(":checked")) {
+                $("#email_settings").slideDown();
+            } else {
+                $("#email_settings").slideUp();
+            }
+        }).trigger("change");
+    });
+</script>
+{% endblock %}

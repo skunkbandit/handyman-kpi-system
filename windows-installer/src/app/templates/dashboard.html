@@ -1,0 +1,145 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Team Performance Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    This is a placeholder dashboard for the Handyman KPI System. In a production environment, this would display real performance data.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h5>Total Employees</h5>
+                                <h2>25</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h5>Avg. Performance</h5>
+                                <h2>87%</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5>Skills Tracked</h5>
+                                <h2>32</h2>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <h5>Pending Reviews</h5>
+                                <h2>7</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Employee Distribution by Level</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Count</th>
+                            <th>Average Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Apprentice</td>
+                            <td>5</td>
+                            <td>72%</td>
+                        </tr>
+                        <tr>
+                            <td>Handyman</td>
+                            <td>8</td>
+                            <td>79%</td>
+                        </tr>
+                        <tr>
+                            <td>Craftsman</td>
+                            <td>7</td>
+                            <td>86%</td>
+                        </tr>
+                        <tr>
+                            <td>Master Craftsman</td>
+                            <td>3</td>
+                            <td>92%</td>
+                        </tr>
+                        <tr>
+                            <td>Lead Craftsman</td>
+                            <td>2</td>
+                            <td>96%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Recent Activities</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>John Smith completed quarterly evaluation</span>
+                            <span class="badge bg-success">Today</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Mary Johnson promoted to Master Craftsman</span>
+                            <span class="badge bg-primary">Yesterday</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>New skill added: Advanced Plumbing</span>
+                            <span class="badge bg-info">2 days ago</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Team performance review scheduled</span>
+                            <span class="badge bg-warning">3 days ago</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <span>New employee onboarded: Mike Williams</span>
+                            <span class="badge bg-secondary">1 week ago</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

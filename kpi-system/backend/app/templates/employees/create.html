@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Employee - Handyman KPI System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Add New Employee</h1>
+        <p class="lead">Enter employee information to add them to the system</p>
+    </div>
+    <div class="col-auto d-flex align-items-center">
+        <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Employee Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback">
+                            Please provide a name.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               placeholder="(Optional)">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tier" class="form-label">Tier</label>
+                        <select class="form-select" id="tier" name="tier" required>
+                            <option value="" selected disabled>Select tier</option>
+                            <option value="Apprentice">Apprentice</option>
+                            <option value="Handyman">Handyman</option>
+                            <option value="Craftsman">Craftsman</option>
+                            <option value="Master Craftsman">Master Craftsman</option>
+                            <option value="Lead Craftsman">Lead Craftsman</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            Please select a tier.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="hire_date" class="form-label">Hire Date</label>
+                        <input type="date" class="form-control" id="hire_date" name="hire_date">
+                        <div class="form-text">
+                            Leave blank if unknown
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+                            <label class="form-check-label" for="active">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Save Employee
+                        </button>
+                        <a href="{{ url_for('employees.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Form validation
+    (function() {
+        'use strict';
+        
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms).forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+    
+    // Set default hire date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('hire_date');
+        if (!dateInput.value) {
+            const today = new Date();
+            const year = today.getFullYear();
+            let month = today.getMonth() + 1;
+            let day = today.getDate();
+            
+            // Pad month and day with leading zero if needed
+            month = month < 10 ? '0' + month : month;
+            day = day < 10 ? '0' + day : day;
+            
+            dateInput.value = `${year}-${month}-${day}`;
+        }
+    });
+</script>
+{% endblock %}
