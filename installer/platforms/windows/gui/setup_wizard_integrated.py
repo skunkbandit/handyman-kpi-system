@@ -1,4 +1,5 @@
-"""Setup wizard for the Handyman KPI System Windows installer.
+"""
+Setup wizard for the Handyman KPI System Windows installer.
 
 This module provides a graphical user interface for setting up the Handyman KPI System,
 including database configuration, admin account creation, and application settings.
@@ -12,7 +13,7 @@ from tkinter import ttk, messagebox, filedialog
 from typing import Dict, Any, Optional, Callable
 
 # Add parent directories to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))  # noqa
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 from installer.core.config import InstallerConfig
 from installer.core.environment import Environment
@@ -119,22 +120,3 @@ class SetupWizard:
         
         # Center window on screen
         self.center_window()
-    
-    def create_styles(self):
-        """Create styles for the wizard."""
-        style = ttk.Style()
-        
-        # Create a style for headers
-        style.configure("Header.TLabel", font=("Arial", 12, "bold"))
-        
-        # Create a style for primary buttons
-        style.configure("Primary.TButton", font=("Arial", 10, "bold"))
-    
-    def center_window(self):
-        """Center the window on the screen."""
-        self.root.update_idletasks()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2)
-        self.root.geometry(f"{width}x{height}+{x}+{y}")
