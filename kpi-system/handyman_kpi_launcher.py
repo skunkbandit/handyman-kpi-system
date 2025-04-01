@@ -12,16 +12,17 @@ import traceback
 
 # Set up logging
 def setup_logging():
-    # For PyInstaller bundle, log to the Program Files directory
+    # Use AppData\Local for logs instead of Program Files directory
     if hasattr(sys, '_MEIPASS'):
         # We're running from a PyInstaller bundle
-        base_dir = os.path.dirname(sys.executable)
-        log_dir = os.path.join(base_dir, "logs")
+        app_data_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), "Handyman KPI System")
     else:
         # We're running as a regular Python script
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        log_dir = os.path.join(base_dir, "logs")
+        app_data_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), "Handyman KPI System")
     
+    # Create log directory in AppData
+    log_dir = os.path.join(app_data_dir, "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "launcher.log")
     
@@ -35,12 +36,16 @@ def setup_logging():
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     logging.getLogger('').addHandler(console)
+    
+    # Log the location so we can find it later if needed
+    print(f"Log file: {log_file}")
+    return app_data_dir
 
 def main():
     """Launch the Handyman KPI application."""
     try:
-        # Initialize logging
-        setup_logging()
+        # Initialize logging - store the app data directory for future use
+        app_data_dir = setup_logging()
         logging.info("Starting Handyman KPI System...")
         
         # Get the installation directory - we know this will be where the executable is located
@@ -56,6 +61,7 @@ def main():
             logging.info(f"Running as script. Base directory: {base_dir}")
         
         logging.info(f"Base directory: {base_dir}")
+        logging.info(f"App data directory: {app_data_dir}")
         
         # Path to the Python executable (in the installation directory)
         python_path = os.path.join(base_dir, "python", "python.exe")
@@ -138,7 +144,14 @@ def main():
         python_path_value = os.pathsep.join([backend_dir, app_module_dir, parent_dir])
         env["PYTHONPATH"] = python_path_value
         
+        # Also set FLASK_APP environment variable to help with imports
+        env["FLASK_APP"] = "app"
+        
+        # Set the app data directory as an environment variable for the application to use
+        env["KPI_SYSTEM_APP_DATA"] = app_data_dir
+        
         logging.info(f"Set PYTHONPATH to: {python_path_value}")
+        logging.info(f"Set KPI_SYSTEM_APP_DATA to: {app_data_dir}")
         
         # Launch the application
         logging.info("Launching application...")
