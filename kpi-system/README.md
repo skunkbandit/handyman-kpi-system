@@ -4,6 +4,27 @@ This directory contains the core launcher for the Handyman KPI System.
 
 ## Recent Fixes
 
+### Complete Import and Permissions Fix (April 1, 2025)
+
+We've implemented a comprehensive solution that addresses multiple issues with the application installer:
+
+1. **Python Module Import Fix**:
+   - Enhanced Python path configuration in the launcher
+   - Implemented an alternative import method in the backend script
+   - Added paths for all necessary directories (backend, app, site-packages)
+
+2. **Log File Permissions Fix**:
+   - Changed log file location from Program Files to AppData
+   - Created a central app data directory for user-specific data
+   - Added environment variable support for components to use the same path
+
+3. **Enhanced Debugging**:
+   - Added output capture from subprocess execution
+   - Improved error reporting and logging
+   - Added verification of critical directories and files
+
+The application now correctly handles module imports and respects Windows security models.
+
 ### Log File Permission Fix (April 1, 2025)
 
 The launcher has been updated to fix the "Permission denied" error when writing to log files in the Program Files directory. This error occurred because standard users don't have write access to the Program Files directory.
@@ -37,24 +58,11 @@ The launcher has been updated to fix the "ModuleNotFoundError: No module named '
    - Added a fallback mechanism using Python's module import system
    - Enhanced logging to make future troubleshooting easier
 
-#### How to Apply the Fixes
-
-For existing installations:
-
-1. Run the `fix_launcher_logs.bat` script included in the project directory
-2. Rebuild the launcher with `create_launcher.bat`
-3. Rebuild the installer with `build_installer.bat`
-4. Test the installation to verify the fixes
-
-For new installations:
-
-- The fixes are already included in the latest installer
-
 ## Components
 
 - `handyman_kpi_launcher.py`: Main application launcher
-- `backend/`: Backend application code
-- `app/`: Flask application module
+- `backend/run.py`: Backend application initialization script
+- `backend/app/`: Flask application module
 
 ## Architecture
 
@@ -71,7 +79,9 @@ The launcher follows this execution flow:
 
 If you encounter issues with the application startup:
 
-1. Check the log file at `%LOCALAPPDATA%\Handyman KPI System\logs\launcher.log`
+1. Check the log files at:
+   - `%LOCALAPPDATA%\Handyman KPI System\logs\launcher.log`
+   - `%LOCALAPPDATA%\Handyman KPI System\logs\backend.log`
 2. Verify that Python is properly installed at `<installation_dir>/python/python.exe`
 3. Ensure all application files are present in the expected locations
 4. Make sure your user account has normal user permissions (elevated permissions shouldn't be needed)
