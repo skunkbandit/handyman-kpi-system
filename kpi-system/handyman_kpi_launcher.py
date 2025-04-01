@@ -13,13 +13,10 @@ import traceback
 # Set up logging
 def setup_logging():
     # Use AppData\Local for logs instead of Program Files directory
-    if hasattr(sys, '_MEIPASS'):
-        # We're running from a PyInstaller bundle
-        app_data_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), "Handyman KPI System")
-    else:
-        # We're running as a regular Python script
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        app_data_dir = os.path.join(os.environ.get('LOCALAPPDATA', os.path.expanduser('~')), "Handyman KPI System")
+    app_data_dir = os.path.join(
+        os.environ.get('LOCALAPPDATA', os.path.expanduser('~')),
+        "Handyman KPI System"
+    )
     
     # Create log directory in AppData
     log_dir = os.path.join(app_data_dir, "logs")
@@ -49,10 +46,8 @@ def main():
         logging.info("Starting Handyman KPI System...")
         
         # Get the installation directory - we know this will be where the executable is located
-        # CRITICAL: When installed, the launcher is in Program Files/Handyman KPI System/
-        # and Python is in Program Files/Handyman KPI System/python/
         if hasattr(sys, '_MEIPASS'):
-            # We're running from a PyInstaller bundle (installed application)
+            # We're running from a PyInstaller bundle
             base_dir = os.path.dirname(sys.executable)
             logging.info(f"Running from PyInstaller bundle. Base directory: {base_dir}")
         else:
@@ -66,8 +61,7 @@ def main():
         # Path to the Python executable (in the installation directory)
         python_path = os.path.join(base_dir, "python", "python.exe")
         
-        # Path to the main application script - assuming it's in the same directory
-        # as the installation, under kpi-system/backend/run.py
+        # Path to the main application script
         app_script = os.path.join(base_dir, "kpi-system", "backend", "run.py")
         
         # If the app script doesn't exist, check for it directly in the backend subdirectory
@@ -82,23 +76,6 @@ def main():
         if not os.path.exists(python_path):
             logging.error(f"Python executable not found at {python_path}")
             print(f"Error: Python executable not found at {python_path}")
-            print("Looking in alternate locations...")
-            
-            # List contents of the base directory to help diagnose
-            logging.info(f"Contents of base directory ({base_dir}):")
-            try:
-                for item in os.listdir(base_dir):
-                    logging.info(f"  {item}")
-                    if os.path.isdir(os.path.join(base_dir, item)):
-                        try:
-                            subdir_contents = os.listdir(os.path.join(base_dir, item))
-                            for subitem in subdir_contents:
-                                logging.info(f"    {item}/{subitem}")
-                        except Exception as e:
-                            logging.error(f"Error listing contents of {item}: {e}")
-            except Exception as e:
-                logging.error(f"Error listing directory contents: {e}")
-            
             input("Press Enter to exit...")
             return 1
         
@@ -106,48 +83,31 @@ def main():
         if not os.path.exists(app_script):
             logging.error(f"Application script not found at {app_script}")
             print(f"Error: Application script not found at {app_script}")
-            print("Looking in alternate locations...")
-            
-            # List available Python scripts in the installation directory
-            logging.info("Searching for Python scripts in installation directory...")
-            found_scripts = []
-            
-            for root, dirs, files in os.walk(base_dir):
-                for file in files:
-                    if file.endswith('.py'):
-                        rel_path = os.path.relpath(os.path.join(root, file), base_dir)
-                        logging.info(f"  Found Python script: {rel_path}")
-                        found_scripts.append(os.path.join(root, file))
-            
-            # Try to find a run.py file
-            run_scripts = [script for script in found_scripts if os.path.basename(script) == 'run.py']
-            if run_scripts:
-                app_script = run_scripts[0]
-                logging.info(f"Using run.py script: {app_script}")
-                print(f"Found application script at: {app_script}")
-            else:
-                logging.error("No run.py script found in installation directory")
-                print("Error: Could not find application script in installation directory.")
-                input("Press Enter to exit...")
-                return 1
+            input("Press Enter to exit...")
+            return 1
+        
+        # Set up paths for Python modules
+        backend_dir = os.path.dirname(app_script)  # This is the backend directory
+        app_module_dir = os.path.join(backend_dir, "app")  # This is where the app module should be
+        parent_dir = os.path.dirname(backend_dir)  # Parent directory of backend
+        python_lib_dir = os.path.join(os.path.dirname(python_path), "Lib")  # Python standard library
+        site_packages = os.path.join(python_lib_dir, "site-packages")  # Third-party packages
         
         # Set Python path environment
         env = os.environ.copy()
         
-        # CRITICAL FIX: Properly set the Python paths for import resolution
-        # We need to add both the backend directory and its parent directory to the path
-        backend_dir = os.path.dirname(app_script)  # This is the backend directory
-        app_module_dir = os.path.join(backend_dir, "app")  # This is where the app module should be
-        parent_dir = os.path.dirname(backend_dir)  # Parent directory of backend, needed for some imports
-        
-        # Create a PYTHONPATH value that includes both directories
-        python_path_value = os.pathsep.join([backend_dir, app_module_dir, parent_dir])
+        # Create a PYTHONPATH value that includes all necessary directories
+        python_path_value = os.pathsep.join([
+            backend_dir, 
+            app_module_dir, 
+            parent_dir,
+            python_lib_dir,
+            site_packages
+        ])
         env["PYTHONPATH"] = python_path_value
         
-        # Also set FLASK_APP environment variable to help with imports
+        # Set environment variables for the application
         env["FLASK_APP"] = "app"
-        
-        # Set the app data directory as an environment variable for the application to use
         env["KPI_SYSTEM_APP_DATA"] = app_data_dir
         
         logging.info(f"Set PYTHONPATH to: {python_path_value}")
@@ -159,25 +119,36 @@ def main():
         print(f"Running script: {app_script}")
         
         try:
-            # First approach - use subprocess.run with check=True to raise exceptions
-            subprocess.run([python_path, app_script], env=env, check=True)
-            logging.info("Application closed normally")
-        except subprocess.CalledProcessError as e:
-            logging.error(f"Error running script: {e}")
+            # Use subprocess.run with captured output
+            process = subprocess.run(
+                [python_path, app_script], 
+                env=env, 
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
             
-            # Second approach - try running with -m flag to help with module imports
-            logging.info("Trying alternative approach with module import...")
-            try:
-                # Get the module name from the script path (relative to the parent directory)
-                script_rel_path = os.path.relpath(app_script, parent_dir)
-                module_path = script_rel_path.replace(os.path.sep, '.').replace('.py', '')
+            # Log any output for debugging
+            if process.stdout:
+                logging.info(f"Application stdout:\n{process.stdout}")
+            if process.stderr:
+                logging.info(f"Application stderr:\n{process.stderr}")
                 
-                logging.info(f"Running as module: {module_path}")
-                subprocess.run([python_path, "-m", module_path], env=env, check=True)
-                logging.info("Application closed normally using module approach")
-            except subprocess.CalledProcessError as inner_e:
-                logging.error(f"Error running script as module: {inner_e}")
-                raise
+            logging.info("Application closed normally")
+            
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Error launching application: {e}")
+            
+            # Log captured output for debugging
+            if hasattr(e, 'stdout') and e.stdout:
+                logging.info(f"Application stdout:\n{e.stdout}")
+            if hasattr(e, 'stderr') and e.stderr:
+                logging.error(f"Application stderr:\n{e.stderr}")
+                
+            print(f"Error launching application: {e}")
+            print("See logs for details.")
+            input("Press Enter to exit...")
+            return 1
         
     except Exception as e:
         logging.error(f"Error launching application: {e}")
