@@ -166,3 +166,101 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <!-- Top Skills -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Top Skills</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Skill</th>
+                                <th>Category</th>
+                                <th class="text-center">Avg. Rating</th>
+                                <th class="text-end">Proficiency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for skill in top_skills %}
+                            <tr>
+                                <td>{{ skill.name }}</td>
+                                <td>{{ skill.category.name }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= skill.avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="progress">
+                                        <div class="progress-bar skill-progress-{{ skill.avg_rating|round|int }}" 
+                                             role="progressbar"
+                                             style="width: {{ skill.avg_rating / 5 * 100 }}%"
+                                             aria-valuenow="{{ skill.avg_rating }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="5"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Improvement Areas -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Improvement Areas</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Skill</th>
+                                <th>Category</th>
+                                <th class="text-center">Avg. Rating</th>
+                                <th class="text-end">Proficiency</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for skill in improvement_skills %}
+                            <tr>
+                                <td>{{ skill.name }}</td>
+                                <td>{{ skill.category.name }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= skill.avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="progress">
+                                        <div class="progress-bar skill-progress-{{ skill.avg_rating|round|int }}" 
+                                             role="progressbar"
+                                             style="width: {{ skill.avg_rating / 5 * 100 }}%"
+                                             aria-valuenow="{{ skill.avg_rating }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="5"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
