@@ -137,3 +137,70 @@ def run_backend_thread(python_path, backend_script):
     except Exception as e:
         logging.error(f"Error starting backend: {e}")
         return None
+
+# Open the browser to the application URL
+def open_browser(url):
+    time.sleep(2)  # Wait for the server to start
+    try:
+        logging.info(f"Opening browser at URL: {url}")
+        import webbrowser
+        webbrowser.open(url)
+    except Exception as e:
+        logging.error(f"Error opening browser: {e}")
+
+# Main function
+def main():
+    app_data_dir = setup_logging()
+    logging.info("Starting Handyman KPI System launcher")
+    
+    # Find Python and backend script
+    python_path = get_python_path()
+    if not python_path:
+        logging.error("Could not find Python executable")
+        return 1
+    
+    logging.info(f"Using Python executable: {python_path}")
+    
+    backend_script = get_backend_script()
+    if not backend_script:
+        logging.error("Could not find backend run script")
+        return 1
+    
+    logging.info(f"Using backend script: {backend_script}")
+    
+    # Run database fix script if it exists
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    db_fix_script = os.path.join(script_dir, "fix_database_all.py")
+    if os.path.exists(db_fix_script):
+        logging.info("Running database fix script")
+        try:
+            subprocess.run([python_path.replace('pythonw.exe', 'python.exe'), db_fix_script], 
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            logging.info("Database fix script completed")
+        except Exception as e:
+            logging.error(f"Error running database fix script: {e}")
+    
+    # Start the backend
+    process = run_backend_thread(python_path, backend_script)
+    if not process:
+        logging.error("Failed to start backend")
+        return 1
+    
+    # Open the browser
+    open_browser("http://localhost:5000")
+    
+    # Keep the launcher running
+    try:
+        while True:
+            # Check if the process is still running
+            if process.poll() is not None:
+                logging.error(f"Backend process exited with code: {process.returncode}")
+                break
+            time.sleep(5)
+    except KeyboardInterrupt:
+        logging.info("Received keyboard interrupt, shutting down")
+    
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
