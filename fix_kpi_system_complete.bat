@@ -28,17 +28,7 @@ if %errorlevel% neq 0 (
 echo Database schema fix completed successfully
 
 echo.
-echo Step 2: Creating detached launcher...
-pyrhon create_detached_launcher.py
-if %errorlevel% neq 0 (
-    echo Failed to create detached launcher
-    pause
-    exit /b 1
-)
-echo Detached launcher created successfully
-
-echo.
-echo Step 3: Updating system files...
+echo Step 2: Creating desktop shortcut...
 set INSTALL_DIR="%ProgramFiles%\Handyman KPI System"
 if not exist %INSTALL_DIR% (
     echo Installation directory not found: %INSTALL_DIR%
@@ -48,7 +38,6 @@ if not exist %INSTALL_DIR% (
 )
 
 echo Copying files to installation directory...
-copy /Y "fixed_detached_launcher.py" %INSTALL_DIR%\
 copy /Y "handyman_kpi_launcher_detached.pyw" %INSTALL_DIR%\
 copy /Y "fix_database_all.py" %INSTALL_DIR%\
 
