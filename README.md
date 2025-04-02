@@ -8,45 +8,53 @@ This repository contains fixes for the Handyman KPI System installation process,
 
 ### Issues Fixed
 
-1. **Database Configuration Issue**: 
-   - The SQLite database is now stored in the user's AppData directory for proper write permissions
+1. **Database Schema Issue**: 
+   - Fixed SQLite error `no such column: users.employee_id` by updating the database schema
+   - Added missing columns to match the expected schema
+   - Implemented a database location fix to use AppData for proper write permissions
    - Added automatic database initialization during installation
-   - Implemented a fallback mechanism for database path detection
 
 2. **Terminal Window Issue**:
-   - Application now runs as a detached process
-   - No console window stays open during application execution
-   - Modified desktop shortcut to hide console window
+   - Fixed the issue where the console window stays open and if closed, it kills the application
+   - Application now runs as a detached process with no visible console window
+   - Modified desktop shortcut to use pythonw.exe instead of python.exe
+   - Added a browser shortcut option for direct access
 
 ## How to Apply Fixes
 
-### For Existing Installations
+### For Users With Admin Access
 
-1. Download the `fix_installation.bat` script from this repository
+1. Download the `fix_kpi_system.bat` script from this repository
 2. Run the script as administrator
-3. Use the new desktop shortcut created by the fix script to launch the application
+3. Follow the on-screen instructions
+4. Use the new desktop shortcuts to launch the application
 
-### For New Installations
+### For Users Without Admin Access
 
-The fixes will be integrated into future installers and will be applied automatically during installation.
+1. Download the `fix_kpi_system.bat` script
+2. Run the script as regular user
+3. Database fixes will be applied automatically
+4. Follow the on-screen instructions to complete the launcher fix
 
 ## Technical Details
 
-### Database Path Fix
+### Database Schema Fix
 
-The database path has been changed to use the following locations (in order of precedence):
+The `fix_database_schema.py` script:
 
-1. Path from environment variable `KPI_SYSTEM_DATABASE_PATH`
-2. Path from config file in `%LOCALAPPDATA%\Handyman KPI System\config\database.json`
-3. Default path in `%LOCALAPPDATA%\Handyman KPI System\database\kpi_system.db`
+1. Examines the current database schema
+2. Compares it with the expected schema from `schema.sql`
+3. Adds missing columns (particularly `employee_id`)
+4. Creates a default admin user if none exists
 
-### Launcher Fix
+### Launcher Window Fix
 
-The application launcher has been modified to:
+The `fix_launcher_window.py` script:
 
-1. Use `subprocess.Popen()` with detached process flags instead of `subprocess.run()`
-2. Use `CREATE_NO_WINDOW` to hide the console window on Windows
-3. Create a proper desktop shortcut that uses `pythonw.exe` instead of `python.exe`
+1. Creates a detached launcher using `subprocess.Popen()` with proper flags
+2. Creates improved desktop shortcuts using `pythonw.exe`
+3. Sets proper process creation flags to hide the console window
+4. Provides admin deployment instructions if needed
 
 ## Default Login Credentials
 
@@ -74,4 +82,4 @@ Please change these credentials after your first login.
 
 ## Support
 
-For issues or questions, please create an issue in this repository or contact support.
+For issues or questions, please create an issue in this repository.
