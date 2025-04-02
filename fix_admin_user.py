@@ -103,6 +103,30 @@ def check_admin_user(db_path):
         logging.error(f"Error checking admin user: {e}")
         return False
 
+def get_required_columns(db_path):
+    """Get the list of columns with NOT NULL constraint in the users table."""
+    try:
+        # Connect to the database
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Get table info
+        cursor.execute("PRAGMA table_info(users)")
+        columns = cursor.fetchall()
+        
+        # Format: column_id, name, type, not_null, default, primary_key
+        required_columns = {}
+        for column in columns:
+            if column[3] == 1 and column[4] is None:  # NOT NULL constraint with no default
+                required_columns[column[1]] = column[2]  # name: type
+        
+        conn.close()
+        return required_columns
+    
+    except Exception as e:
+        logging.error(f"Error getting required columns: {e}")
+        return {}
+
 def fix_admin_user(db_path):
     """Fix admin user by recreating it with the correct credentials."""
     try:
@@ -116,6 +140,10 @@ def fix_admin_user(db_path):
             logging.error("Users table does not exist")
             conn.close()
             return False
+        
+        # Get required columns
+        required_columns = get_required_columns(db_path)
+        logging.info(f"Required columns: {required_columns}")
         
         # Delete existing admin user
         cursor.execute("DELETE FROM users WHERE username = 'admin'")
@@ -148,28 +176,42 @@ def fix_admin_user(db_path):
         columns = cursor.fetchall()
         column_names = [column[1] for column in columns]
         
+        # Prepare default values for required columns
+        default_values = {
+            'username': 'admin',
+            'password_hash': password_hash,
+            'role': 'admin',
+            'active': 1,
+            'email': 'admin@example.com',  # Default email
+            'force_password_change': 0,
+            'last_login': None
+        }
+        
+        # Build the SQL query
+        columns_to_insert = []
+        values_to_insert = []
+        
+        for col in column_names:
+            if col in default_values:
+                columns_to_insert.append(col)
+                values_to_insert.append(default_values[col])
+        
+        # Add salt if needed
         if 'salt' in column_names:
-            # If the table has a salt column
             salt = secrets.token_hex(8)
-            query = """
-                INSERT INTO users (username, password_hash, salt, role, active)
-                VALUES (?, ?, ?, ?, ?)
-            """
-            cursor.execute(query, ('admin', password_hash, salt, 'admin', 1))
-        else:
-            # If no salt column
-            query = """
-                INSERT INTO users (username, password_hash, role, active)
-                VALUES (?, ?, ?, ?)
-            """
-            cursor.execute(query, ('admin', password_hash, 'admin', 1))
+            columns_to_insert.append('salt')
+            values_to_insert.append(salt)
+        
+        # Create the INSERT query
+        placeholders = ', '.join(['?' for _ in columns_to_insert])
+        columns_str = ', '.join(columns_to_insert)
+        
+        query = f"INSERT INTO users ({columns_str}) VALUES ({placeholders})"
+        cursor.execute(query, values_to_insert)
+        logging.info(f"Inserted admin user with: {columns_to_insert}")
         
         # Check if employee_id column exists and is required
-        is_employee_id_required = False
-        for column in columns:
-            if column[1] == 'employee_id' and column[3] == 1:  # notnull constraint
-                is_employee_id_required = True
-                break
+        is_employee_id_required = 'employee_id' in required_columns
         
         if is_employee_id_required:
             # We need to add an employee for the admin user
