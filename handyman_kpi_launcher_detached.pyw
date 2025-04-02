@@ -61,3 +61,79 @@ def get_python_path():
             return sys.executable
     
     return None
+
+# Find the backend run script
+def get_backend_script():
+    # Get the directory of this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # Look for various backend run scripts
+    possible_scripts = [
+        os.path.join(script_dir, "kpi-system", "backend", "run.py"),
+        os.path.join(script_dir, "kpi-system", "run.py"),
+        os.path.join(script_dir, "backend_run.py"),
+        os.path.join(script_dir, "fixed_backend_run.py"),
+        os.path.join(script_dir, "final_backend_run.py")
+    ]
+    
+    for script in possible_scripts:
+        if os.path.exists(script):
+            return script
+    
+    return None
+
+# Run the backend in a separate thread
+def run_backend_thread(python_path, backend_script):
+    logging.info(f"Starting backend with: {python_path} {backend_script}")
+    
+    try:
+        # Set creation flags to run without showing a window
+        startupinfo = None
+        if os.name == 'nt':
+            DETACHED_PROCESS = 0x00000008
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = 0  # SW_HIDE
+            
+            # Use subprocess.Popen with CREATE_NO_WINDOW flag
+            process = subprocess.Popen(
+                [python_path, backend_script],
+                creationflags=subprocess.CREATE_NO_WINDOW | DETACHED_PROCESS,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                startupinfo=startupinfo,
+                shell=False
+            )
+        else:
+            # For non-Windows platforms
+            process = subprocess.Popen(
+                [python_path, backend_script],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False
+            )
+        
+        logging.info(f"Backend process started with PID: {process.pid}")
+        
+        # Start threads to read output without blocking
+        def read_output(pipe, prefix):
+            for line in iter(pipe.readline, b''):
+                logging.info(f"{prefix}: {line.decode().strip()}")
+        
+        threading.Thread(target=read_output, args=(process.stdout, "STDOUT"), daemon=True).start()
+        threading.Thread(target=read_output, args=(process.stderr, "STDERR"), daemon=True).start()
+        
+        # Check if the process is running
+        time.sleep(1)
+        if process.poll() is None:
+            logging.info("Backend process is running successfully")
+        else:
+            logging.error(f"Backend process exited with code: {process.returncode}")
+        
+        return process
+    
+    except Exception as e:
+        logging.error(f"Error starting backend: {e}")
+        return None
