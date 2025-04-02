@@ -1,201 +1,77 @@
 # Handyman KPI System
 
-A comprehensive performance tracking and evaluation system for handyman businesses with tiered employee structures.
+A comprehensive KPI (Key Performance Indicator) tracking system for handyman businesses with tiered skill structure (apprentice, handyman, craftsman, master craftsman, lead craftsman) and performance evaluation.
 
-## Overview
+## Installation Fixes
 
-This application helps handyman businesses track employee performance across different skill categories and tool proficiencies. It supports the company's five-tier system:
-- Apprentice
-- Handyman
-- Craftsman 
-- Master Craftsman
-- Lead Craftsman
+This repository contains fixes for the Handyman KPI System installation process, addressing database path issues and terminal window problems.
 
-The system allows for regular evaluations, progress tracking, skill gap analysis, and comprehensive reporting.
+### Issues Fixed
+
+1. **Database Configuration Issue**: 
+   - The SQLite database is now stored in the user's AppData directory for proper write permissions
+   - Added automatic database initialization during installation
+   - Implemented a fallback mechanism for database path detection
+
+2. **Terminal Window Issue**:
+   - Application now runs as a detached process
+   - No console window stays open during application execution
+   - Modified desktop shortcut to hide console window
+
+## How to Apply Fixes
+
+### For Existing Installations
+
+1. Download the `fix_installation.bat` script from this repository
+2. Run the script as administrator
+3. Use the new desktop shortcut created by the fix script to launch the application
+
+### For New Installations
+
+The fixes will be integrated into future installers and will be applied automatically during installation.
+
+## Technical Details
+
+### Database Path Fix
+
+The database path has been changed to use the following locations (in order of precedence):
+
+1. Path from environment variable `KPI_SYSTEM_DATABASE_PATH`
+2. Path from config file in `%LOCALAPPDATA%\Handyman KPI System\config\database.json`
+3. Default path in `%LOCALAPPDATA%\Handyman KPI System\database\kpi_system.db`
+
+### Launcher Fix
+
+The application launcher has been modified to:
+
+1. Use `subprocess.Popen()` with detached process flags instead of `subprocess.run()`
+2. Use `CREATE_NO_WINDOW` to hide the console window on Windows
+3. Create a proper desktop shortcut that uses `pythonw.exe` instead of `python.exe`
+
+## Default Login Credentials
+
+After applying the fixes, you can log in with the following default credentials:
+
+- **Username**: admin
+- **Password**: admin
+
+Please change these credentials after your first login.
 
 ## Features
 
-- **Employee Management**: Track employee information, skill levels, and career progression
-- **Skill Evaluation**: Rate employee proficiency in various skill categories
-- **Tool Proficiency**: Track tools employees can operate and own
-- **Performance Dashboard**: Visual analytics of employee and team performance 
-- **Comprehensive Reports**: Generate PDF and Excel reports for performance reviews and analysis
-- **Authentication System**: Secure login with role-based permissions and user management
-- **Multi-Database Support**: Works with SQLite, MySQL, and PostgreSQL
+- Employee management with skill tiers
+- Performance evaluation based on role-specific metrics
+- Dashboard with performance trends
+- Detailed reports and analytics
+- User management with role-based access control
 
-## Technical Stack
+## System Requirements
 
-- **Backend**: Python, Flask, SQLAlchemy
-- **Frontend**: HTML, CSS, Bootstrap 5, JavaScript
-- **Data Visualization**: Chart.js
-- **Database**: SQLite (development), MySQL/PostgreSQL (production)
-- **Reporting**: WeasyPrint (PDF generation), XlsxWriter (Excel export)
-- **Authentication**: Flask-Login, Flask-WTF for CSRF protection
-- **Installation**: Modular installer with multi-database support
-- **Testing**: pytest, coverage, Selenium
+- Windows 10 or 11
+- 500MB of disk space
+- 4GB RAM (minimum)
+- 1024×768 screen resolution
 
-## Project Structure
+## Support
 
-```
-handyman-kpi-system/
-├── backend/
-│   ├── app/
-│   │   ├── models/         # Database models
-│   │   ├── routes/         # API endpoints and views
-│   │   ├── static/         # CSS, JS, images
-│   │   ├── templates/      # HTML templates
-│   │   ├── middleware/     # Application middleware (access control)
-│   │   ├── utils/          # Utility functions
-│   │   └── __init__.py     # Application initialization
-│   └── run.py              # Application entry point
-├── database/
-│   ├── schema.sql          # Database schema
-│   ├── migrate_auth.py     # Authentication migration script
-│   └── init_data.sql       # Initial data
-├── installer/
-│   ├── core/               # Core installer functionality
-│   ├── platforms/          # Platform-specific extensions
-│   │   ├── windows/        # Windows-specific components
-│   │   └── docker/         # Docker-specific components (future)
-│   ├── shared/             # Shared resources
-│   │   ├── database/       # Database adapters and schemas
-│   │   └── utils/          # Shared utilities
-│   └── build/              # Build scripts
-├── docs/                   # Documentation
-├── tests/                  # Test suite
-│   ├── unit/               # Unit tests for models
-│   ├── integration/        # Integration tests for routes
-│   ├── ui/                 # UI tests with Selenium
-│   ├── conftest.py         # Test configuration
-│   └── run_tests.py        # Test runner script
-└── scripts/                # Utility scripts
-```
-
-## Reporting Module
-
-The system provides four main report types:
-
-1. **Employee Performance Report**: Individual employee evaluations for performance reviews
-2. **Team Performance Report**: Comparative analysis across employees
-3. **Skills Analysis Report**: Deep dive into skill distribution
-4. **Tool Inventory Report**: Tool proficiency and ownership tracking
-
-Reports can be exported as PDF documents or Excel spreadsheets for further analysis.
-
-## Authentication System
-
-The system implements a comprehensive authentication system with the following features:
-
-- **User Authentication**: Secure login/logout with session management
-- **Role-Based Access Control**: Three permission levels
-  - **Admin**: Full system access including user management
-  - **Manager**: Access to all employees and reporting
-  - **Employee**: Limited access to personal data and evaluations
-- **Security Features**:
-  - Password hashing with Werkzeug
-  - CSRF protection with Flask-WTF
-  - Rate limiting for login attempts
-  - Secure password reset mechanism
-  - Force password change functionality
-
-## Installation System
-
-The system features a modular installer architecture with support for multiple installation methods:
-
-- **Windows Installer**: GUI-based setup wizard
-- **Docker Deployment**: Container-based installation (coming soon)
-- **Source Installation**: Manual installation from source code
-
-### Database Support
-
-The installer supports multiple database backends:
-
-- **SQLite**: Recommended for single-user deployments
-- **MySQL**: For multi-user deployments with moderate load
-- **PostgreSQL**: For high-performance production environments
-
-The modular adapter system allows each database type to use optimized schemas and configurations while maintaining a consistent API.
-
-## Testing
-
-The system includes a comprehensive testing framework with multiple layers of tests:
-
-### Unit Tests
-- Tests for individual models and components
-- Validation of business rules and constraints
-- Comprehensive validation of model relationships
-- Database adapter and initializer testing
-
-### Integration Tests
-- Tests for authentication routes and user management
-- Employee and evaluation management workflow testing
-- Dashboard and reporting functionality verification
-- Database migration testing
-
-### UI Tests
-- Selenium-based tests for frontend components
-- Responsive design verification
-- Form validation testing
-- Dynamic component interaction testing
-
-### Running Tests
-Tests can be run using the included test runner script:
-
-```
-python tests/run_tests.py
-```
-
-For detailed coverage reports:
-
-```
-python tests/run_tests.py --cov
-```
-
-## Installation
-
-### Prerequisites
-- Python 3.8+
-- pip
-- Virtual environment tool (optional but recommended)
-
-### Setup
-1. Clone the repository
-   ```
-   git clone https://github.com/skunkbandit/handyman-kpi-system.git
-   cd handyman-kpi-system
-   ```
-
-2. Create and activate a virtual environment (optional)
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies
-   ```
-   pip install -r requirements.txt
-   ```
-
-4. Initialize the database
-   ```
-   python scripts/init_database.py
-   ```
-
-5. Run the application
-   ```
-   python backend/run.py
-   ```
-
-6. Open a web browser and navigate to `http://localhost:5000`
-
-## Usage
-
-Detailed usage instructions and admin documentation are available in the [User Guide](docs/user_guide.md).
-
-## License
-
-[MIT License](LICENSE)
-
-## Contact
-
-For support or questions, please open an issue on this repository.
+For issues or questions, please create an issue in this repository or contact support.
