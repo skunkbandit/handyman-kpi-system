@@ -1,0 +1,221 @@
+"""Flask application factory for the KPI system
+"""
+import os
+import json
+import logging
+from pathlib import Path
+from flask import Flask, redirect, url_for, render_template
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
+
+# Create extension instances
+db = SQLAlchemy()
+login_manager = LoginManager()
+csrf = CSRFProtect()
+
+def get_database_path():
+    """
+    Get the database path from environment variables or config file.
+    Falls back to default paths if not found.
+    """
+    # Check environment variable first
+    db_path = os.environ.get('KPI_SYSTEM_DATABASE_PATH')
+    if db_path and os.path.isdir(os.path.dirname(db_path)):
+        logging.info(f"Using database path from environment: {db_path}")
+        return db_path
+    
+    # Check AppData config
+    app_data_dir = os.environ.get('KPI_SYSTEM_APP_DATA', os.path.join(
+        os.environ.get('LOCALAPPDATA', os.path.expanduser('~')),
+        "Handyman KPI System"
+    ))
+    config_file = os.path.join(app_data_dir, "config", "database.json")
+    
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                if config.get('path'):
+                    # Ensure the directory exists
+                    os.makedirs(os.path.dirname(config['path']), exist_ok=True)
+                    logging.info(f"Using database path from config: {config['path']}")
+                    return config['path']
+        except Exception as e:
+            logging.error(f"Error reading database config file: {e}")
+    
+    # Fall back to AppData/database directory
+    db_dir = os.path.join(app_data_dir, "database")
+    os.makedirs(db_dir, exist_ok=True)
+    db_path = os.path.join(db_dir, "kpi_system.db")
+    logging.info(f"Using fallback database path: {db_path}")
+    return db_path
+
+def create_app(test_config=None):
+    """
+    Create and configure the Flask application
+    """
+    # Configure logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    )
+    
+    # Create app instance
+    app = Flask(__name__, instance_relative_config=True)
+    
+    # Get the database path
+    db_path = get_database_path()
+    logging.info(f"Database path: {db_path}")
+    
+    # Default configuration
+    app.config.from_mapping(
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev_key_not_for_production'),
+        SQLALCHEMY_DATABASE_URI=f"sqlite:///{db_path}",
+        SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        APP_NAME='Handyman KPI System',
+        APP_VERSION='1.0.0',
+        WTF_CSRF_ENABLED=True,
+        REMEMBER_COOKIE_DURATION=86400,  # 1 day in seconds
+        REMEMBER_COOKIE_SECURE=False,    # Set to True in production with HTTPS
+        REMEMBER_COOKIE_HTTPONLY=True
+    )
+    
+    # Log the database URI
+    logging.info(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    
+    # Load test config if passed in
+    if test_config is not None:
+        app.config.from_mapping(test_config)
+    
+    # Ensure the instance folder exists
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+    
+    # Initialize extensions with app
+    db.init_app(app)
+    csrf.init_app(app)
+    
+    # Configure Flask-Login
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_message_category = 'info'
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models.user import User
+        return User.query.get(int(user_id))
+    
+    # Register blueprints
+    from app.routes import dashboard, employees, evaluations, reports, main, auth
+    
+    app.register_blueprint(main.bp)
+    app.register_blueprint(dashboard.bp)
+    app.register_blueprint(employees.bp)
+    app.register_blueprint(evaluations.bp)
+    app.register_blueprint(reports.bp)
+    app.register_blueprint(auth.bp)
+    
+    # Make url_for('index') work for the main index page
+    app.add_url_rule('/', endpoint='index')
+    
+    # Setup context processors
+    @app.context_processor
+    def inject_app_info():
+        return dict(
+            app_name=app.config['APP_NAME'],
+            app_version=app.config['APP_VERSION']
+        )
+
+    # Error handlers
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('errors/404.html'), 404
+
+    @app.errorhandler(403)
+    def forbidden(e):
+        return render_template('errors/403.html'), 403
+
+    @app.errorhandler(500)
+    def server_error(e):
+        return render_template('errors/500.html'), 500
+    
+    # Initialize database if it doesn't exist
+    with app.app_context():
+        try:
+            # Check if database exists and is accessible
+            from app.models.user import User
+            
+            # Test query to see if we can access the database
+            try:
+                User.query.first()
+                logging.info("Database exists and is accessible")
+            except Exception as db_error:
+                logging.warning(f"Database exists but may need initialization: {db_error}")
+                
+                # Try to create tables
+                try:
+                    db.create_all()
+                    logging.info("Created database tables")
+                    
+                    # Create default admin user if no users exist
+                    if User.query.count() == 0:
+                        create_default_admin(db)
+                except Exception as init_error:
+                    logging.error(f"Error initializing database: {init_error}")
+                
+        except Exception as e:
+            logging.error(f"Error checking database: {e}")
+            
+            # Create database and tables
+            try:
+                db.create_all()
+                logging.info("Created database tables")
+                
+                # Create default admin user
+                create_default_admin(db)
+            except Exception as create_error:
+                logging.error(f"Error creating database: {create_error}")
+    
+    return app
+
+def create_default_admin(db):
+    """Create a default admin user if no users exist."""
+    from app.models.user import User
+    import hashlib
+    import secrets
+    
+    # Generate salt
+    salt = secrets.token_hex(16)
+    
+    # Hash default password with salt (default is 'admin')
+    password = 'admin'
+    password_bytes = password.encode('utf-8')
+    salt_bytes = salt.encode('utf-8')
+    
+    password_hash = hashlib.pbkdf2_hmac(
+        'sha256',
+        password_bytes,
+        salt_bytes,
+        100000,
+        dklen=64
+    ).hex()
+    
+    # Create admin user
+    admin = User(
+        username='admin',
+        email='admin@example.com',
+        password_hash=password_hash,
+        salt=salt,
+        is_admin=True,
+        active=True
+    )
+    
+    # Add to database
+    db.session.add(admin)
+    db.session.commit()
+    
+    logging.info("Created default admin user (username: admin, password: admin)")
