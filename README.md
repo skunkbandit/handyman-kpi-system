@@ -20,6 +20,16 @@ This repository contains fixes for the Handyman KPI System installation process,
    - Modified desktop shortcut to use pythonw.exe instead of python.exe
    - Added a browser shortcut option for direct access
 
+3. **CSRF Token Missing Error**:
+   - Fixed "400 Bad Request: The CSRF token is missing" error when trying to add new employees
+   - Added missing CSRF token input fields to employee forms
+
+4. **User-Employee Linking Issue** (Added April 2, 2025):
+   - Fixed issue where employee names weren't displaying in user management dropdowns
+   - Updated templates to correctly reference the `name` field instead of non-existent `first_name`/`last_name` fields
+   - Fixed field value mismatch between `employee_id` and `id` in templates
+   - See [User-Employee Linking Fix README](fixes/README-user-employee-linking-fix.md) for details
+
 ## How to Apply Fixes
 
 ### For Users With Admin Access
@@ -35,6 +45,12 @@ This repository contains fixes for the Handyman KPI System installation process,
 2. Run the script as regular user
 3. Database fixes will be applied automatically
 4. Follow the on-screen instructions to complete the launcher fix
+
+### For User-Employee Linking Issue
+
+1. Download the `fix_user_employee_linking_direct.bat` script
+2. Run the script in the KPI system root directory
+3. The fix will automatically backup and update the affected templates
 
 ## Technical Details
 
@@ -55,6 +71,14 @@ The `fix_launcher_window.py` script:
 2. Creates improved desktop shortcuts using `pythonw.exe`
 3. Sets proper process creation flags to hide the console window
 4. Provides admin deployment instructions if needed
+
+### User-Employee Linking Fix
+
+The `fix_user_employee_linking.py` script:
+
+1. Creates backups of the original template files
+2. Updates the field references in the templates to match the Employee model
+3. Corrects the dropdown options to show employee names properly
 
 ## Default Login Credentials
 
