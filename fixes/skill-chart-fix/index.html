@@ -264,3 +264,133 @@
         </div>
     </div>
 </div>
+
+<div class="row">
+    <!-- Recent Evaluations -->
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Evaluations</h5>
+                <a href="{{ url_for('evaluations.index') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-list me-1"></i> View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_evaluations %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Employee</th>
+                                <th>Tier</th>
+                                <th>Date</th>
+                                <th class="text-center">Skills</th>
+                                <th class="text-center">Tools</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in recent_evaluations %}
+                            <tr>
+                                <td>{{ eval.employee.name }}</td>
+                                <td>
+                                    <span class="tier-badge {{ 'tier-' + eval.employee.tier.lower().replace(' ', '-') }}">
+                                        {{ eval.employee.tier }}
+                                    </span>
+                                </td>
+                                <td>{{ eval.evaluation_date.strftime('%Y-%m-%d') }}</td>
+                                <td class="text-center">
+                                    <div class="rating-stars">
+                                        {% set avg_rating = eval.skill_evaluations|map(attribute='rating')|sum / eval.skill_evaluations|length if eval.skill_evaluations else 0 %}
+                                        {% for i in range(1, 6) %}
+                                            <i class="{{ 'fas' if i <= avg_rating else 'far' }} fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    {{ eval.tool_evaluations|length }} tools
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ url_for('evaluations.view', evaluation_id=eval.evaluation_id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info m-3">
+                    No evaluations available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Data for skill distribution chart
+    const skillDistributionData = {
+        labels: [
+            {% for category in skill_categories %}
+                '{{ category.name }}',
+            {% endfor %}
+        ],
+        data: [
+            {% for category in skill_categories %}
+                {{ category_avg_ratings.get(category.category_id, 0)|round(1) }},
+            {% endfor %}
+        ]
+    };
+    
+    // Data for progress over time chart
+    const progressData = {
+        labels: [
+            {% for date in progress_dates %}
+                '{{ date.strftime("%b %Y") }}',
+            {% endfor %}
+        ],
+        datasets: [
+            {% for category in skill_categories %}
+            {
+                label: '{{ category.name }}',
+                data: [
+                    {% for date in progress_dates %}
+                        {{ category_progress.get((category.category_id, date.strftime("%Y-%m")), 0)|round(1) }},
+                    {% endfor %}
+                ],
+                borderColor: getRandomColor(),
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                fill: false,
+                tension: 0.4
+            },
+            {% endfor %}
+        ]
+    };
+    
+    // Function to get random colors for chart
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+    
+    // Ensure charts resize properly when parent container size changes
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add additional styling to the skill chart container for better sizing
+        const skillChartContainer = document.getElementById('skill-chart-container');
+        if (skillChartContainer) {
+            skillChartContainer.style.maxWidth = '400px';
+            skillChartContainer.style.maxHeight = '400px';
+        }
+    });
+</script>
+{% endblock %}
