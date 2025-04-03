@@ -11,6 +11,7 @@ import logging
 import hashlib
 import secrets
 from pathlib import Path
+from datetime import datetime
 
 # Configure logging
 def setup_logging():
@@ -84,8 +85,8 @@ def get_schema():
     # Try to find schema file in current directory first
     base_dir = os.path.dirname(os.path.abspath(__file__))
     schema_paths = [
-        os.path.join(base_dir, "installer", "shared", "database", "schema_sqlite.sql"),
-        os.path.join(base_dir, "shared", "database", "schema_sqlite.sql"),
+        os.path.join(base_dir, "kpi-system", "backend", "app", "database", "schema.sql"),
+        os.path.join(base_dir, "kpi-system", "database", "schema.sql"),
         os.path.join(base_dir, "database", "schema.sql"),
     ]
     
@@ -105,23 +106,27 @@ def get_schema():
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        salt TEXT NOT NULL,
-        is_admin BOOLEAN NOT NULL DEFAULT 0,
+        role TEXT NOT NULL DEFAULT 'user',
+        employee_id INTEGER,
         active BOOLEAN NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        last_login TIMESTAMP,
+        force_password_change BOOLEAN DEFAULT 0,
+        reset_token TEXT,
+        reset_token_expiry TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (employee_id) REFERENCES employees (id)
     );
     
     -- Employees table
     CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        email TEXT UNIQUE,
+        name TEXT NOT NULL,
         phone TEXT,
+        email TEXT,
         tier TEXT NOT NULL,
+        hire_date DATE,
         active BOOLEAN NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -141,28 +146,54 @@ def get_schema():
         FOREIGN KEY (evaluator_id) REFERENCES users (id)
     );
     
-    -- KPI metrics table
-    CREATE TABLE IF NOT EXISTS kpi_metrics (
+    -- Skills table
+    CREATE TABLE IF NOT EXISTS skills (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
-        tier TEXT NOT NULL,
-        weight INTEGER NOT NULL DEFAULT 1,
+        max_score INTEGER DEFAULT 5,
+        tier TEXT,
+        category TEXT,
+        active BOOLEAN NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     
-    -- Evaluation details table
-    CREATE TABLE IF NOT EXISTS evaluation_details (
+    -- Tools table
+    CREATE TABLE IF NOT EXISTS tools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        tier TEXT,
+        active BOOLEAN NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Skill ratings table
+    CREATE TABLE IF NOT EXISTS skill_ratings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         evaluation_id INTEGER NOT NULL,
-        metric_id INTEGER NOT NULL,
+        skill_id INTEGER NOT NULL,
         score INTEGER NOT NULL,
         comments TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (evaluation_id) REFERENCES evaluations (id),
-        FOREIGN KEY (metric_id) REFERENCES kpi_metrics (id)
+        FOREIGN KEY (skill_id) REFERENCES skills (id)
+    );
+    
+    -- Tool proficiencies table
+    CREATE TABLE IF NOT EXISTS tool_proficiencies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        tool_id INTEGER NOT NULL,
+        proficiency_level TEXT NOT NULL,
+        certification_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (employee_id) REFERENCES employees (id),
+        FOREIGN KEY (tool_id) REFERENCES tools (id)
     );
     """
 
@@ -185,24 +216,25 @@ def initialize_database(db_path, schema_sql):
         logging.error(f"Error initializing database: {e}")
         return False
 
+def generate_password_hash(password):
+    """Generate a password hash compatible with Flask-Login and Werkzeug."""
+    # Generate salt
+    salt = secrets.token_hex(16)
+    
+    # Hash password with salt
+    password_bytes = password.encode('utf-8')
+    salt_bytes = salt.encode('utf-8')
+    
+    hash_obj = hashlib.sha256(salt_bytes + password_bytes)
+    password_hash = f"pbkdf2:sha256:150000${salt}${hash_obj.hexdigest()}"
+    
+    return password_hash
+
 def create_default_admin(db_path):
     """Create a default admin user in the database."""
     try:
-        # Generate salt
-        salt = secrets.token_hex(16)
-        
-        # Hash default password with salt (default is 'admin')
-        password = 'admin'
-        password_bytes = password.encode('utf-8')
-        salt_bytes = salt.encode('utf-8')
-        
-        password_hash = hashlib.pbkdf2_hmac(
-            'sha256',
-            password_bytes,
-            salt_bytes,
-            100000,
-            dklen=64
-        ).hex()
+        # Generate password hash
+        password_hash = generate_password_hash('admin')
         
         # Connect to database
         conn = sqlite3.connect(db_path)
@@ -224,8 +256,10 @@ def create_default_admin(db_path):
         
         # Create admin user
         cursor.execute(
-            "INSERT INTO users (username, email, password_hash, salt, is_admin, active) VALUES (?, ?, ?, ?, ?, ?)",
-            ('admin', 'admin@example.com', password_hash, salt, 1, 1)
+            """INSERT INTO users 
+               (username, password_hash, role, active, created_at, updated_at) 
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            ('admin', password_hash, 'admin', 1, datetime.now(), datetime.now())
         )
         
         # Commit and close
