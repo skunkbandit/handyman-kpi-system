@@ -2,12 +2,15 @@
 """
 Run script for the KPI System application.
 
-This script sets up and runs the Flask development server.
+This script sets up and runs the Flask development server with enhanced
+module import handling to prevent common import errors.
 """
 
 import os
 import sys
+import importlib.util
 import logging
+from pathlib import Path
 
 # Set up logging
 try:
@@ -20,7 +23,7 @@ try:
     
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format='%(asctime)s - %(levelname)s - %(message)s',
         filename=os.path.join(logs_dir, 'backend.log'),
         filemode='a'
     )
@@ -29,7 +32,7 @@ except Exception as e:
     print(f"Warning: Could not set up file logging: {e}")
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
 # Log execution environment for debugging
@@ -48,30 +51,74 @@ try:
     parent_dir = os.path.dirname(current_dir)
     
     # Add necessary directories to path
-    for path in [current_dir, app_dir, parent_dir]:
+    for path in [app_dir, current_dir, parent_dir]:
         if path not in sys.path:
             sys.path.insert(0, path)
             logging.info(f'Added directory to path: {path}')
     
-    # Use the alternative import approach that was successful in testing
+    # Use direct module loading with multiple fallback strategies
+    create_app = None
+    
+    # Strategy 1: Direct module loading using importlib
     try:
-        # Attempt to import with the proven alternative approach
-        import app
-        create_app = app.create_app
-        logging.info('Successfully imported app module')
-    except ImportError as e:
-        # Log the error but don't panic yet
-        logging.error(f'Error importing app module directly: {e}')
-        
-        # Try the traditional approach as a backup
+        init_path = os.path.join(app_dir, "__init__.py")
+        if os.path.exists(init_path):
+            logging.info(f"Found app/__init__.py at {init_path}")
+            
+            # Load the module manually
+            spec = importlib.util.spec_from_file_location("app", init_path)
+            app_module = importlib.util.module_from_spec(spec)
+            sys.modules["app"] = app_module
+            spec.loader.exec_module(app_module)
+            
+            # Get create_app function directly
+            if hasattr(app_module, "create_app"):
+                create_app = app_module.create_app
+                logging.info("Successfully loaded create_app function using importlib")
+            else:
+                logging.error("The app module does not have a create_app function")
+        else:
+            logging.error(f"app/__init__.py not found at {init_path}")
+    except Exception as e:
+        logging.error(f"Error using direct import approach: {e}")
+    
+    # Strategy 2: Standard import approach
+    if create_app is None:
         try:
+            logging.info("Trying standard import approach")
             from app import create_app
-            logging.info('Successfully imported create_app from app module')
-        except ImportError as e2:
-            logging.error(f'Failed to import create_app from app: {e2}')
-            # Re-raise the error for proper error handling
-            raise e
-
+            logging.info("Successfully imported create_app through standard import")
+        except ImportError as e:
+            logging.error(f"Standard import approach failed: {e}")
+    
+    # Strategy 3: Backup import approach
+    if create_app is None:
+        try:
+            logging.info("Trying backup import approach")
+            import app
+            
+            # Check if the module has the create_app attribute
+            if hasattr(app, "create_app"):
+                create_app = app.create_app
+                logging.info("Successfully retrieved create_app from app module")
+            else:
+                logging.error("app module loaded but has no create_app attribute")
+                
+                # Look for functions that might be the app factory
+                factory_candidates = [attr for attr in dir(app) 
+                                    if callable(getattr(app, attr)) and attr.endswith("_app")]
+                
+                if factory_candidates:
+                    logging.info(f"Found potential app factory candidates: {factory_candidates}")
+                    create_app = getattr(app, factory_candidates[0])
+                    logging.info(f"Using {factory_candidates[0]} as create_app")
+        except Exception as e:
+            logging.error(f"Backup import approach failed: {e}")
+    
+    # Final check - if we still don't have create_app, raise an error
+    if create_app is None:
+        raise ImportError("Could not locate the create_app function using any import method")
+    
     # Create the application instance
     app = create_app()
     logging.info('Application instance created successfully')
