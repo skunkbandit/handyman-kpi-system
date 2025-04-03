@@ -68,6 +68,7 @@ For detailed documentation, please refer to the [User Guide](docs/user_guide.md)
 1. **Application doesn't start**
    - Make sure Python is installed and added to PATH
    - Check the logs in `%LOCALAPPDATA%\Handyman KPI System\logs`
+   - If you see `AttributeError: module 'app' has no attribute 'create_app'`, run the [App Import Fix](docs/APP_IMPORT_FIX.md)
 
 2. **Database errors**
    - The database is located at `%LOCALAPPDATA%\Handyman KPI System\database\kpi_system.db`
@@ -76,6 +77,18 @@ For detailed documentation, please refer to the [User Guide](docs/user_guide.md)
 3. **PDF generation issues**
    - Make sure GTK3 Runtime is installed (included with the installer)
    - If PDF reports fail, check logs for specific errors
+
+4. **Installer build issues**
+   - If you're building the installer, use the `build_installer_complete.bat` script
+   - See the [installer build documentation](docs/installer/build-scripts-guide.md) for details
+
+### Known Issues and Solutions
+
+| Issue | Description | Solution |
+|-------|-------------|----------|
+| App Import Error | `AttributeError: module 'app' has no attribute 'create_app'` | Run `python fix_app_import.py` and then the resulting batch file |
+| WeasyPrint Issues | PDF generation fails | Make sure GTK3 Runtime is installed |
+| Missing Files After Install | Installer doesn't include all necessary files | Use the latest `build_installer_complete.bat` to create installer |
 
 ### Getting Help
 
